@@ -7,17 +7,37 @@ import MessageBox from './MessageBox';
 import axios from 'axios';
 import { pusherClient } from '@/lib/pusher';
 import { find } from 'lodash';
-
+import getConversationById from '@/app/actions/getConversationById';
+import { FullConversationType } from '@/types';
 interface BodyProps {
   initialMessages: FullMessageType[];
+  conversation: FullConversationType;
 }
 
-const Body: React.FC<BodyProps> = ({ initialMessages }) => {
+const Body: React.FC<BodyProps> = ({ initialMessages, conversation }) => {
   const [messages, setMessages] = useState(initialMessages);
+  const [isAnonymous, setIsAnonymous] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const { conversationId } = useConversation();
 
+  // Fetch conversation data safely
+  useEffect(() => {
+    const loadConversation = async () => {
+      try {
+        // console.log(conversation)
+        if (conversation) {
+          setIsAnonymous(!!conversation.isGroup && !!conversation.isAnonymous);
+        }
+      } catch (error) {
+        console.error('Error loading conversation:', error);
+      }
+    };
+
+    loadConversation();
+  }, [conversationId]);
+
+  // Rest of your existing useEffect hooks remain the same
   useEffect(() => {
     axios.post(`/api/chat/conversations/${conversationId}/seen`);
   }, [conversationId]);
@@ -52,7 +72,7 @@ const Body: React.FC<BodyProps> = ({ initialMessages }) => {
     return () => {
       pusherClient.unsubscribe(conversationId);
       pusherClient.unbind('messages:new', messageHandler);
-      pusherClient.bind('messages:update', updateMessageHandler);
+      pusherClient.unbind('message:update', updateMessageHandler);
     };
   }, [conversationId]);
 
@@ -63,6 +83,7 @@ const Body: React.FC<BodyProps> = ({ initialMessages }) => {
           isLast={i === messages.length - 1}
           key={message.id}
           data={message}
+          isAnonymous={isAnonymous}
         />
       ))}
 
@@ -70,4 +91,5 @@ const Body: React.FC<BodyProps> = ({ initialMessages }) => {
     </div>
   );
 };
+
 export default Body;

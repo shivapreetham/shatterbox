@@ -1,4 +1,3 @@
-import Navbar from '@/components/home&anonymous/Navbar';
 import ActiveStatus from '@/components/chat/ActiveStatus';
 
 import Sidebar from '@/components/chat/sidebar/Sidebar';

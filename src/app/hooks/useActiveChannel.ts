@@ -1,3 +1,4 @@
+'use client';
 // hooks/useActiveChannel.ts
 import { Channel, Members } from 'pusher-js';
 import { useState, useEffect } from 'react';
@@ -13,19 +14,18 @@ const useActiveChannel = () => {
   useEffect(() => {
     if (!session?.user?.email) return;
 
-    let channel = activeChannel;
-
-    if (!channel) {
-      channel = pusherClient.subscribe('presence-messenger');
-      setActiveChannel(channel);
-    }
+    const channel = pusherClient.subscribe('presence-messenger') as Channel;
+    setActiveChannel(channel);
 
     channel.bind('pusher:subscription_succeeded', (members: Members) => {
+      console.log('Subscription succeeded:', members.count, 'members');
       const initialMembers: any[] = [];
       members.each((member: Record<string, any>) => {
+        console.log('Member info:', member.info);
         initialMembers.push({
           id: member.id,
-          lastSeen: member.info?.lastSeen || new Date(),
+          email: member.id,
+          lastSeen: member.info?.lastSeen ? new Date(member.info.lastSeen) : new Date(),
           activeStatus: member.info?.activeStatus || false
         });
       });
@@ -33,13 +33,14 @@ const useActiveChannel = () => {
     });
 
     channel.bind('pusher:member_added', (member: Record<string, any>) => {
+      console.log('Member added with info:', member.info);
       add({
         id: member.id,
-        lastSeen: member.info?.lastSeen || new Date(),
+        email: member.id,
+        lastSeen: member.info?.lastSeen ? new Date(member.info.lastSeen) : new Date(),
         activeStatus: true
       });
     });
-
     channel.bind('pusher:member_removed', (member: Record<string, any>) => {
       updateStatus(member.id, {
         activeStatus: false,
@@ -48,33 +49,13 @@ const useActiveChannel = () => {
       remove(member.id);
     });
 
-    // Handle window visibility
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        fetch('/api/chat/users/status', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ isOnline: true })
-        });
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-
     return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      if (activeChannel) {
-        fetch('/api/chat/users/status', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ isOnline: false })
-        }).finally(() => {
-          pusherClient.unsubscribe('presence-messenger');
-          setActiveChannel(null);
-        });
-      }
+      channel.unbind_all();
+      pusherClient.unsubscribe('presence-messenger');
     };
-  }, [session?.user?.email, activeChannel, add, remove, set, updateStatus]);
+  }, [session?.user?.email, add, remove, set, updateStatus]);
+
+  return activeChannel;
 };
 
 export default useActiveChannel;

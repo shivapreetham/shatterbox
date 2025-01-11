@@ -2,16 +2,8 @@
 import PusherServer from 'pusher';
 import PusherClient from 'pusher-js';
 
-// Type definitions for better TypeScript support
-type PusherConnectionState = 'connecting' | 'connected' | 'disconnected' | 'failed' | 'unavailable';
-
-interface PusherStateChange {
-  current: PusherConnectionState;
-  previous: PusherConnectionState;
-}
-
-// Server instance
-export const pusherServer = new PusherServer({
+// Create a singleton instance for the server
+const pusherServerClient = new PusherServer({
   appId: "1921962",
   key: "feb370272fdb536a6de7",
   secret: "4d4eb6d9706204c37bf4",
@@ -19,47 +11,53 @@ export const pusherServer = new PusherServer({
   useTLS: true
 });
 
-// Client instance
-export const pusherClient = new PusherClient(
-  "feb370272fdb536a6de7", // Use the actual key instead of env variable since it's public anyway
+// Create a singleton instance for the client
+const pusherClientInstance = new PusherClient(
+  "feb370272fdb536a6de7",
   {
     cluster: "ap2",
     authEndpoint: '/api/pusher/auth',
-    authTransport: 'ajax', // Changed from transport to authTransport
+    authTransport: 'ajax',
     auth: {
       headers: {
-        'Content-Type': 'application/json', // Changed to application/json for better compatibility
+        'Content-Type': 'application/x-www-form-urlencoded',
       },
     },
-    enabledTransports: ['ws', 'wss'], // Explicitly enable WebSocket transports
+    enabledTransports: ['ws', 'wss'],
   }
 );
 
-// Enhanced error handling with specific error types
-pusherClient.connection.bind('error', (err: Error) => {
+// Type definitions
+type PusherConnectionState = 'connecting' | 'connected' | 'disconnected' | 'failed' | 'unavailable';
+
+interface PusherStateChange {
+  current: PusherConnectionState;
+  previous: PusherConnectionState;
+}
+
+// Add error handling
+pusherClientInstance.connection.bind('error', (err: Error) => {
   console.error('Pusher connection error:', {
     message: err.message,
     name: err.name,
     stack: err.stack
   });
   
-  // Attempt to reconnect on error
-  if (pusherClient.connection.state !== 'connected') {
+  if (pusherClientInstance.connection.state !== 'connected') {
     setTimeout(() => {
-      pusherClient.connect();
+      pusherClientInstance.connect();
     }, 3000);
   }
 });
 
-// Enhanced state change logging with type safety
-pusherClient.connection.bind('state_change', (states: PusherStateChange) => {
+// Add state change logging
+pusherClientInstance.connection.bind('state_change', (states: PusherStateChange) => {
   console.log('Pusher connection state changed:', {
     current: states.current,
     previous: states.previous,
     timestamp: new Date().toISOString()
   });
 
-  // Handle specific state changes
   switch (states.current) {
     case 'connected':
       console.log('Successfully connected to Pusher');
@@ -77,17 +75,14 @@ pusherClient.connection.bind('state_change', (states: PusherStateChange) => {
   }
 });
 
-// Add connection success handler
-pusherClient.connection.bind('connected', () => {
-  console.log('Successfully connected to Pusher presence channel');
-});
+// Helper function
+const isPusherConnected = () => {
+  return pusherClientInstance.connection.state === 'connected';
+};
 
-// Add subscription error handling
-pusherClient.bind('pusher:subscription_error', (status: number) => {
-  console.error('Pusher subscription error:', status);
-});
-
-// Export a helper function to check connection status
-export const isPusherConnected = () => {
-  return pusherClient.connection.state === 'connected';
+// Export everything needed
+export {
+  pusherServerClient as pusherServer,
+  pusherClientInstance as pusherClient,
+  isPusherConnected
 };

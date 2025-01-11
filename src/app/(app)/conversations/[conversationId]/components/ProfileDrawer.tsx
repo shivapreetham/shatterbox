@@ -18,7 +18,6 @@ interface ProfileDrawerProps {
     users: User[];
   };
 }
-// _id is used instead of id, expecting errors
 
 const ProfileDrawer: React.FC<ProfileDrawerProps> = ({
   isOpen,
@@ -29,7 +28,6 @@ const ProfileDrawer: React.FC<ProfileDrawerProps> = ({
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const { members } = useActiveList();
 
-  // Fix: Check user ID instead of email for active status
   const isActive = members.find(member => member.id === otherUser?._id)?.activeStatus;
 
   const joinedDate = useMemo(() => {
@@ -54,6 +52,47 @@ const ProfileDrawer: React.FC<ProfileDrawerProps> = ({
     
     return `Last seen ${format(new Date(member.lastSeen), 'PPp')}`;
   }, [data, members, otherUser?._id]);
+
+  const MemberList = () => {
+    return (
+      <div className="space-y-4">
+        {data.users.map((user) => {
+          const memberStatus = members.find(m => m.id === user.id);
+          return (
+            <div key={user.id} className="flex items-center justify-between gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors">
+              <div className="flex items-center gap-3">
+                <div className="relative">
+                  <Avatar user={user} />
+                  {memberStatus?.activeStatus && (
+                    <span 
+                      className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-emerald-500 ring-2 ring-card"
+                      aria-label="Online status indicator"
+                    />
+                  )}
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-sm font-medium text-foreground">
+                    {user.username || 'Unnamed User'}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {user.email}
+                  </span>
+                  {memberStatus && (
+                    <span className="text-xs text-muted-foreground">
+                      {memberStatus.activeStatus 
+                        ? 'Active now'
+                        : `Last seen ${format(new Date(memberStatus.lastSeen), 'PPp')}`
+                      }
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
 
   return (
     <>
@@ -138,13 +177,11 @@ const ProfileDrawer: React.FC<ProfileDrawerProps> = ({
                             <dl className="space-y-8 px-4 sm:space-y-6 sm:px-6">
                               {data.isGroup ? (
                                 <div>
-                                  <dt className="text-sm font-medium text-muted-foreground sm:w-40 sm:flex-shrink-0">
+                                  <dt className="text-sm font-medium text-muted-foreground mb-4">
                                     Members
                                   </dt>
-                                  <dd className="mt-1 text-sm font-medium text-foreground sm:col-span-2">
-                                    {data.users
-                                      .map((user: any) => user.name || user.email)
-                                      .join(', ')}
+                                  <dd className="mt-1">
+                                    <MemberList />
                                   </dd>
                                 </div>
                               ) : (
@@ -158,35 +195,18 @@ const ProfileDrawer: React.FC<ProfileDrawerProps> = ({
                                 </div>
                               )}
 
-                              {data.isGroup ? (
-                                <>
-                                  <hr className="border-border" />
-                                  <div>
-                                    <dt className="text-sm font-medium text-muted-foreground sm:w-40 sm:flex-shrink-0">
-                                      Created
-                                    </dt>
-                                    <dd className="mt-1 text-sm font-medium text-foreground sm:col-span-2">
-                                      <time dateTime={joinedDate}>
-                                        {joinedDate}
-                                      </time>
-                                    </dd>
-                                  </div>
-                                </>
-                              ) : (
-                                <>
-                                  <hr className="border-border" />
-                                  <div>
-                                    <dt className="text-sm font-medium text-muted-foreground sm:w-40 sm:flex-shrink-0">
-                                      Joined
-                                    </dt>
-                                    <dd className="mt-1 text-sm font-medium text-foreground sm:col-span-2">
-                                      <time dateTime={joinedDate}>
-                                        {joinedDate}
-                                      </time>
-                                    </dd>
-                                  </div>
-                                </>
-                              )}
+                              <hr className="border-border" />
+                              
+                              <div>
+                                <dt className="text-sm font-medium text-muted-foreground sm:w-40 sm:flex-shrink-0">
+                                  {data.isGroup ? 'Created' : 'Joined'}
+                                </dt>
+                                <dd className="mt-1 text-sm font-medium text-foreground sm:col-span-2">
+                                  <time dateTime={joinedDate}>
+                                    {joinedDate}
+                                  </time>
+                                </dd>
+                              </div>
                             </dl>
                           </div>
                         </div>

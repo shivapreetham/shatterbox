@@ -8,13 +8,19 @@ const ActiveStatus = () => {
   useActiveChannel();
 
   useEffect(() => {
-    const handleBeforeUnload = () => {
-      fetch('/api/chat/users/status', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ isOnline: false }),
-        keepalive: true
-      });
+    // Set initial online status
+    fetch('/api/users/status', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ isOnline: true })
+    });
+
+    const handleBeforeUnload = async () => {
+      const blob = new Blob(
+        [JSON.stringify({ isOnline: false })],
+        { type: 'application/json' }
+      );
+      navigator.sendBeacon('/api/users/status', blob);
     };
 
     window.addEventListener('beforeunload', handleBeforeUnload);

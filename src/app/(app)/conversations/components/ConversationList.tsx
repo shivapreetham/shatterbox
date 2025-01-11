@@ -50,12 +50,10 @@ const ConversationList: React.FC<ConversationListProps> = ({
           if (c.id === conversation.id) {
             return { ...c, messages: conversation.messages };
           }
-
           return c;
         })
       );
     };
-//find conversions by id, 
 
     const deleteHandler = (conversation: FullConversationType) => {
       setConversations((prevConversations) =>
@@ -90,9 +88,19 @@ const ConversationList: React.FC<ConversationListProps> = ({
         className={clsx(
           'fixed inset-y-0 pb-20 lg:pb-0 lg:left-20 lg:w-80 lg:block overflow-y-auto border-r theme-transition',
           'border-border/30 bg-background/95 dark:bg-card/95 backdrop-blur-sm',
+          'scrollbar-hide',
           isOpen ? 'hidden' : 'block w-full left-0'
         )}
       >
+        <style jsx global>{`
+          .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+          }
+          .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+          }
+        `}</style>
         <div className="px-5">
           <div className="flex justify-between mb-4 py-4 border-b border-border/30">
             <div className="text-2xl font-bold text-foreground">Messages</div>
@@ -122,6 +130,6 @@ const ConversationList: React.FC<ConversationListProps> = ({
       </aside>
     </>
   );
-
 };
+
 export default ConversationList;

@@ -4,7 +4,7 @@ import getCurrentUser from './getCurrentUser';
 const getConversationById = async (conversationId: string) => {
   try {
     const currentUser = await getCurrentUser();
-
+    // console.log("getting conv by id", conversationId);
     if (!currentUser) return null;
 
     const conversation = await prisma.conversation.findUnique({

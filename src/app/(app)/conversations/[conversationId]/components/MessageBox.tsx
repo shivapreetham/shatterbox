@@ -12,9 +12,15 @@ import ImageModal from './ImageModal';
 interface MessageBoxProps {
   isLast: boolean;
   data: FullMessageType;
+  isAnonymous?: boolean;
 }
 
-const MessageBox: React.FC<MessageBoxProps> = ({ isLast, data }) => {
+const MessageBox: React.FC<MessageBoxProps> = ({ 
+  isLast, 
+  data,
+  isAnonymous 
+}) => {
+  // console.log(isAnonymous);
   const session = useSession();
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
 
@@ -32,7 +38,7 @@ const MessageBox: React.FC<MessageBoxProps> = ({ isLast, data }) => {
   const avatar = clsx(
     'transition-opacity',
     isOwn && 'order-2',
-    'hover:opacity-75'
+    isAnonymous ? 'opacity-100' : 'hover:opacity-75'
   );
 
   const body = clsx(
@@ -42,38 +48,61 @@ const MessageBox: React.FC<MessageBoxProps> = ({ isLast, data }) => {
 
   const message = clsx(
     'text-sm w-fit overflow-hidden shadow-card theme-transition',
-    isOwn ? 'bg-primary text-primary-foreground' : 'bg-secondary text-secondary-foreground',
+    isAnonymous 
+      ? (isOwn 
+          ? 'bg-zinc-800 text-zinc-200' 
+          : 'bg-zinc-900 text-zinc-300')
+      : (isOwn 
+          ? 'bg-primary text-primary-foreground' 
+          : 'bg-secondary text-secondary-foreground'),
     data.image ? 'rounded-lg p-0' : 'rounded-2xl py-2 px-4',
     'hover:shadow-card-hover'
   );
 
   const timeStamp = clsx(
     'text-xs',
-    'text-muted-foreground'
+    isAnonymous ? 'text-zinc-500' : 'text-muted-foreground'
   );
 
   const senderName = clsx(
-    'text-sm',
-    'text-muted-foreground',
-    'font-medium'
+    'text-sm font-medium',
+    isAnonymous ? 'text-zinc-500' : 'text-muted-foreground'
   );
 
   const seenText = clsx(
-    'text-xs',
-    'text-muted-foreground',
-    'font-light'
+    'text-xs font-light',
+    isAnonymous ? 'text-zinc-600' : 'text-muted-foreground'
+  );
+
+  const AnonymousAvatar = () => (
+    <div className="w-9 h-9 rounded-full bg-zinc-800 flex items-center justify-center">
+      <Image
+        src="/image.jpg"
+        alt="Anonymous"
+        width={36}
+        height={36}
+        className="rounded-full"
+      />
+    </div>
   );
 
   return (
     <div className={container}>
       <div className={avatar}>
-        <Avatar user={data.sender} />
+        {isAnonymous ? (
+          <AnonymousAvatar />
+        ) : (
+          <Avatar user={data.sender} />
+        )}
       </div>
 
       <div className={body}>
         <div className="flex items-center gap-2">
           <div className={senderName}>
-            {data.sender?.name || data.sender?.email}
+            {isAnonymous 
+              ? `Anonymous ${isOwn ? '(You)' : 'User'}`
+              : (data.sender?.name || data.sender?.email)
+            }
           </div>
           <div className={timeStamp}>
             {format(new Date(data.createdAt), 'p')}
@@ -93,14 +122,14 @@ const MessageBox: React.FC<MessageBoxProps> = ({ isLast, data }) => {
               width={288}
               height={288}
               alt="image"
-              className="object-cover cursor-pointer rounded-lg hover:scale-105 "
+              className="object-cover cursor-pointer rounded-lg hover:scale-105"
             />
           ) : (
             <div className="max-w-sm break-words">{data.body}</div>
           )}
         </div>
 
-        {isLast && isOwn && seenList && (
+        {isLast && isOwn && seenList && !isAnonymous && (
           <div className={seenText}>
             Seen by {seenList}
           </div>

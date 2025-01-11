@@ -85,7 +85,7 @@
     lastMessageAt      DateTime @default(now())
     name               String?
     isGroup            Boolean?
-
+    isAnonymous        Boolean? @default(false)
     // @relations fields
     userIds            String[] @db.ObjectId
     users              User[]   @relation(fields: [userIds], references: [id])

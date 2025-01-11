@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/options';
 import prisma from '@/lib/prismadb';
+
 export async function POST(req: Request) {
   try {
     const session = await getServerSession();
@@ -10,10 +11,10 @@ export async function POST(req: Request) {
     const { isOnline } = body;
 
     if (!session?.user?.email) {
-      return new Response('Unauthorized', { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    await prisma.user.update({
+    const updatedUser = await prisma.user.update({
       where: { email: session.user.email },
       data: {
         activeStatus: isOnline,
@@ -21,8 +22,10 @@ export async function POST(req: Request) {
       }
     });
 
-    return Response.json({ success: true });
+    console.log('Status update:', { email: session.user.email, isOnline });
+    return NextResponse.json(updatedUser);
   } catch (error) {
-    return new Response('Internal Error', { status: 500 });
+    console.error('Status update error:', error);
+    return NextResponse.json({ error: 'Internal Error' }, { status: 500 });
   }
 }

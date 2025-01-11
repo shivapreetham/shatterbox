@@ -10,8 +10,10 @@ interface IParams {
 }
 
 const ConversationId = async ({ params }: { params: IParams }) => {
-  const conversation = await getConversationById(params.conversationId);
-  const messages = await getMessages(params.conversationId);
+  const cparams= await params;
+  const  conversationId = cparams.conversationId;
+  const conversation = await getConversationById(conversationId);
+  const messages = await getMessages(conversationId);
 
   if (!conversation) {
     return (
@@ -30,7 +32,7 @@ const ConversationId = async ({ params }: { params: IParams }) => {
           <Header conversation={conversation} />
         </div>
         <div className="flex-1 overflow-y-auto">
-          <Body initialMessages={messages} />
+          <Body initialMessages={messages} conversation={conversation} />
         </div>
         <div className="border-t border-border shadow-card">
           <Form />

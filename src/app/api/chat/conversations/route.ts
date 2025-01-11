@@ -5,31 +5,26 @@ import { pusherServer } from '@/lib/pusher';
 
 export async function POST(request: Request) {
   try {
-    // Get current user
     const currentUser = await getCurrentUser();
-    // Get request body
     const body = await request.json();
-    // Get data from body (single user & group)
-    const { userId, isGroup, members, name } = body;
+    const { userId, isGroup, members, name, isAnonymous } = body;
 
-    // Check if current user exists
     if (!currentUser?.id || !currentUser?.email) {
       return new NextResponse('Unauthorized', { status: 401 });
     }
 
-    // if all data is there for group
     if (isGroup && (!members || !name || members.length < 2)) {
       return new NextResponse('Group should atleast have 3 members', {
         status: 400,
       });
     }
 
-    // create group chats
     if (isGroup) {
       const newConversation = await prisma.conversation.create({
         data: {
           name,
           isGroup,
+          isAnonymous: isAnonymous || false,
           users: {
             connect: [
               { id: currentUser.id },
@@ -44,8 +39,7 @@ export async function POST(request: Request) {
         },
       });
 
-      // trigger pusher event for each user
-      newConversation.users.forEach((user:any) => {
+      newConversation.users.forEach((user: any) => {
         if (user.email) {
           pusherServer.trigger(user.email, 'conversation:new', newConversation);
         }
@@ -54,8 +48,6 @@ export async function POST(request: Request) {
       return NextResponse.json(newConversation);
     }
 
-    // create single chat
-    // first check if conversation already exists
     const existingConversations = await prisma.conversation.findMany({
       where: {
         OR: [
@@ -79,9 +71,9 @@ export async function POST(request: Request) {
       return NextResponse.json(existingConversation);
     }
 
-    // if not create new conversation
     const newConversation = await prisma.conversation.create({
       data: {
+        isAnonymous: isAnonymous || false,
         users: {
           connect: [{ id: currentUser.id }, { id: userId }],
         },

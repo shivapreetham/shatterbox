@@ -1,8 +1,10 @@
 // hooks/useActiveList.ts
 import { create } from 'zustand';
 
+// hooks/useActiveList.ts
 interface Member {
   id: string;
+  email: string;  // Add email
   lastSeen: Date;
   activeStatus: boolean;
 }
