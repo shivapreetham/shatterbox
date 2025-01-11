@@ -18,10 +18,10 @@ const useActiveChannel = () => {
     setActiveChannel(channel);
 
     channel.bind('pusher:subscription_succeeded', (members: Members) => {
-      console.log('Subscription succeeded:', members.count, 'members');
+      // console.log('Subscription succeeded:', members.count, 'members');
       const initialMembers: any[] = [];
       members.each((member: Record<string, any>) => {
-        console.log('Member info:', member.info);
+        // console.log('Member info:', member.info);
         initialMembers.push({
           id: member.id,
           email: member.id,
@@ -33,7 +33,7 @@ const useActiveChannel = () => {
     });
 
     channel.bind('pusher:member_added', (member: Record<string, any>) => {
-      console.log('Member added with info:', member.info);
+      // console.log('Member added with info:', member.info);
       add({
         id: member.id,
         email: member.id,

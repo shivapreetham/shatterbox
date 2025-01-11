@@ -11,10 +11,28 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { createClient } from '@supabase/supabase-js';
 
+// Define types for programMap and branchMap
+type ProgramMap = {
+  cs: string;
+  ec: string;
+  ee: string;
+  ce: string;
+  me: string;
+  mm: string;
+  pi: string;
+  csca: string;
+  phd: string;
+};
+
+type BranchMap = {
+  ug: string;
+  pg: string;
+};
+
 // Initialize Supabase client
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  process.env.NEXT_PUBLIC_SUPABASE_SERVICE_KEY!
 );
 
 interface SettingsModalProps {
@@ -28,10 +46,30 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
   isOpen = false,
   onClose,
 }) => {
+  // At the top of your file, add this
+
   const router = useRouter();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [image, setImage] = useState(currentUser?.image || '');
+
+  // Move programMap and branchMap outside of useMemo for correct type inference
+  const programMap: ProgramMap = {
+    cs: 'Computer Science and Engineering',
+    ec: 'Electronics and Communication Engineering',
+    ee: 'Electrical Engineering',
+    ce: 'Civil Engineering',
+    me: 'Mechanical Engineering',
+    mm: 'Metallurgical and Materials Engineering',
+    pi: 'Production and Industrial Engineering',
+    csca: 'Master in Computer Applications',
+    phd: 'PhD',
+  };
+
+  const branchMap: BranchMap = {
+    ug: 'Undergraduate',
+    pg: 'Postgraduate',
+  };
 
   // Parse user details from email
   const userDetails = useMemo(() => {
@@ -42,81 +80,49 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     
     const [_, batch, program, branchCode] = match;
     
-    const branchMap = {
-      'cs': 'Computer Science and Engineering',
-      'ec': 'Electronics and Communication Engineering',
-      'ee': 'Electrical Engineering',
-      'ce': 'Civil Engineering',
-      'me': 'Mechanical Engineering',
-      'mm': 'Metallurgical and Materials Engineering',
-      'pi': 'Production and Industrial Engineering',
-      'csca': 'Master in Computer Applications',
-      'phd': 'PhD'
-    };
-
-    const programMap = {
-      'ug': 'Undergraduate',
-      'pg': 'Postgraduate'
-    };
     return {
       batch,
-      program: programMap[program.toLowerCase()],
-      branch: branchMap[branchCode.toLowerCase()] || branchCode.toUpperCase()
+      program: programMap[program.toLowerCase() as keyof ProgramMap],
+      branch: branchMap[branchCode.toLowerCase() as keyof BranchMap] || branchCode.toUpperCase()
     };
-  }, [currentUser?.email]);
+  }, [currentUser?.email, programMap, branchMap]);
 
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
-
-    // Check file type
-    if (!file.type.startsWith('image/')) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Please upload an image file"
-      });
-      return;
-    }
-
-    // Check file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Image size should be less than 5MB"
-      });
-      return;
-    }
-
+  
     setIsLoading(true);
     try {
-      // Generate unique file name
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${currentUser.id}-${Date.now()}.${fileExt}`;
-
-      // Upload to Supabase
+      // Create file path
+      const fileName = `${currentUser.id}-${Date.now()}.jpg`;
+  
+      // Upload
       const { data, error } = await supabase.storage
         .from('profile-images')
-        .upload(fileName, file, {
-          cacheControl: '3600',
-          upsert: true // Replace if exists
-        });
-
-      if (error) throw error;
-
-      // Get public URL
+        .upload(fileName, file);
+  
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
+  
+      // Get URL immediately after successful upload
       const { data: { publicUrl } } = supabase.storage
         .from('profile-images')
         .getPublicUrl(fileName);
-
+  
+      // console.log('Upload successful, URL:', publicUrl);
       setImage(publicUrl);
-    } catch (error) {
-      console.error('Upload error:', error);
+      
+      // Call onSubmit automatically after successful upload
+      await onSubmit();
+  
+    } catch (error: any) {
+      console.error('Upload failed:', error);
       toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to upload image"
+        variant: 'destructive',
+        title: 'Error',
+        description: error.message
       });
     } finally {
       setIsLoading(false);
@@ -125,28 +131,32 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
 
   const onSubmit = async () => {
     setIsLoading(true);
+    console.log('Submitting with image:', image);
     try {
-      if (currentUser?.image && currentUser.image.includes(process.env.NEXT_PUBLIC_SUPABASE_URL)) {
+      if (currentUser?.image && currentUser.image.includes(process.env.NEXT_PUBLIC_SUPABASE_URL!)) {
         const oldFileName = currentUser.image.split('/').pop();
         if (oldFileName) {
-          await supabase.storage
-            .from('profile-images')
-            .remove([oldFileName]);
+          await supabase.storage.from('profile-images').remove([oldFileName]);
         }
       }
-
+      if (!image) {
+        throw new Error('No image selected');
+      }
       await axios.post('/api/chat/profile', { image });
+      // if (!response.data) {
+      //   throw new Error('Failed to get response from API');
+      // }
       router.refresh();
       toast({
-        title: "Success",
-        description: "Profile picture updated!"
+        title: 'Success',
+        description: 'Profile picture updated!',
       });
       onClose();
     } catch (error) {
       toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to update profile picture"
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to update profile picture',
       });
     } finally {
       setIsLoading(false);
@@ -160,7 +170,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
       <Card className="relative w-full max-w-md mx-4 p-6 bg-white dark:bg-gray-900 shadow-xl rounded-xl">
-        <button 
+        <button
           onClick={onClose}
           className="absolute right-4 top-4 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
         >
@@ -194,6 +204,18 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                   <Upload className="h-5 w-5 text-white" />
                 </div>
               </label>
+              {/* <input
+  type="file"
+  accept="image/*"
+  onChange={(e) => {
+    alert('File selected'); // This will confirm if input is triggered
+    handleFileSelect(e);
+  }}
+  className="absolute inset-0 opacity-0 cursor-pointer"
+/>
+<div className="bg-black/50 rounded-full p-2 backdrop-blur-sm">
+  <Upload className="h-5 w-5 text-white" />
+</div> */}
             </div>
           </div>
 
@@ -228,9 +250,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
             <Button
               onClick={onSubmit}
               className="bg-blue-600 hover:bg-blue-700 text-white"
-              disabled={isLoading || image === currentUser?.image}
+              disabled={isLoading}
             >
-              {isLoading ? 'Saving...' : 'Save Changes'}
+              {isLoading ? 'Updating...' : 'Update Profile'}
             </Button>
           </div>
         </div>

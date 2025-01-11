@@ -10,10 +10,10 @@ import { useState, useRef } from 'react';
 import MessageInput from './MessageInput';
 import { createClient } from '@supabase/supabase-js';
 
-// Initialize Supabase client
+// Initialize Supabase client with correct key
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  process.env.NEXT_PUBLIC_SUPABASE_SERVICE_KEY!
 );
 
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
@@ -37,15 +37,7 @@ const messageSchema = z.object({
       return true;
     }, {
       message: "AI prompt cannot exceed 20 words"
-    }),
-  file: z
-    .instanceof(File)
-    .refine((file) => file?.size <= MAX_FILE_SIZE, `Max file size is 5MB.`)
-    .refine(
-      (file) => ACCEPTED_IMAGE_TYPES.includes(file?.type),
-      "Only .jpg, .jpeg, .png and .webp formats are supported."
-    )
-    .optional()
+    })
 });
 
 const Form = () => {
@@ -53,19 +45,20 @@ const Form = () => {
   const [isProcessingAI, setIsProcessingAI] = useState(false);
   const [isUploadingFile, setIsUploadingFile] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
 
   const {
     register,
     handleSubmit,
     setValue,
     formState: { errors },
-    watch
+    watch,
+    reset
   } = useForm<FieldValues>({
     resolver: zodResolver(messageSchema),
     defaultValues: {
-      message: '',
-      file: undefined
-    },
+      message: ''
+    }
   });
 
   const message = watch('message');
@@ -88,40 +81,51 @@ const Form = () => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    try {
-      setValue('file', file);
-    } catch (error) {
-      console.error('File validation failed:', error);
+    // Validate file type
+    if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
+      console.error('Invalid file type');
+      return;
     }
-  };
 
-  const uploadFile = async (file: File) => {
+    // Validate file size
+    if (file.size > MAX_FILE_SIZE) {
+      console.error('File too large');
+      return;
+    }
+
     setIsUploadingFile(true);
     try {
-      // Generate a unique file name
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-      const filePath = `${conversationId}/${fileName}`;
+      // Create file path
+      const fileName = `${conversationId}-${Date.now()}.jpg`;
 
-      // Upload file to Supabase Storage
+      // Upload
       const { data, error } = await supabase.storage
-        .from('chat-images') // Your bucket name
-        .upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: false
-        });
+        .from('chat-images')
+        .upload(fileName, file);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
 
-      // Get public URL for the file
+      // Get URL immediately after successful upload
       const { data: { publicUrl } } = supabase.storage
         .from('chat-images')
-        .getPublicUrl(filePath);
+        .getPublicUrl(fileName);
 
-      return publicUrl;
-    } catch (error) {
-      console.error('File upload failed:', error);
-      throw error;
+      setImageUrl(publicUrl);
+
+      // Submit the message with the image URL
+      await onSubmit({ message: message || '', imageUrl: publicUrl });
+      
+      // Reset the file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+      setImageUrl(null);
+
+    } catch (error: any) {
+      console.error('Upload failed:', error);
     } finally {
       setIsUploadingFile(false);
     }
@@ -134,20 +138,15 @@ const Form = () => {
         return;
       }
 
-      let fileUrl;
-      if (data.file) {
-        fileUrl = await uploadFile(data.file);
-      }
-
-      await axios.post(`/api/chat/messages`, {
+      await axios.post('/api/chat/messages', {
         message: data.message,
-        image: fileUrl,
-        conversationId,
+        image: data.imageUrl || imageUrl,
+        conversationId
       });
 
       // Reset form
-      setValue('message', '', { shouldValidate: false });
-      setValue('file', undefined);
+      reset();
+      setImageUrl(null);
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
@@ -170,7 +169,9 @@ const Form = () => {
           />
           <label
             htmlFor="file-upload"
-            className="cursor-pointer p-2 rounded-full hover:bg-muted transition-colors duration-200 block"
+            className={`cursor-pointer p-2 rounded-full hover:bg-muted transition-colors duration-200 block ${
+              isUploadingFile ? 'opacity-50 cursor-not-allowed' : ''
+            }`}
           >
             <HiPhoto 
               size={30} 
