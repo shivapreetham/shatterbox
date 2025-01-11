@@ -16,7 +16,7 @@ interface MongoConversationType {
   // Add other conversation fields you have
 }
 
-const useOtherUser = (
+const useOtherUser:any = (
   conversation: MongoConversationType
 ) => {
   const session = useSession();

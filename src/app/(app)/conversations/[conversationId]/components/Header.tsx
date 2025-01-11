@@ -61,7 +61,7 @@ const formatLastSeen = (lastSeenDate: Date | string | undefined): string => {
 };
 
 const Header: React.FC<HeaderProps> = ({ conversation }) => {
-  const otherUser = useOtherUser(conversation);
+  const otherUser:any = useOtherUser(conversation);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const { members } = useActiveList();
   const { data: session } = useSession();
