@@ -3,13 +3,19 @@
 import { useState, useMemo } from 'react';
 import { User } from '@prisma/client';
 import { useRouter } from 'next/navigation';
-import { CldUploadButton } from 'next-cloudinary';
 import axios from 'axios';
-import toast from 'react-hot-toast';
+import { useToast } from '@/app/hooks/use-toast';
 import Image from 'next/image';
-import { X } from 'lucide-react';
+import { X, Upload } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { createClient } from '@supabase/supabase-js';
+
+// Initialize Supabase client
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
 interface SettingsModalProps {
   currentUser: User;
@@ -23,6 +29,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
   onClose,
 }) => {
   const router = useRouter();
+  const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [image, setImage] = useState(currentUser?.image || '');
 
@@ -51,7 +58,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
       'ug': 'Undergraduate',
       'pg': 'Postgraduate'
     };
-
     return {
       batch,
       program: programMap[program.toLowerCase()],
@@ -59,26 +65,96 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     };
   }, [currentUser?.email]);
 
-  const handleUpload = (result: any) => {
-    setImage(result?.info?.secure_url);
+  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Check file type
+    if (!file.type.startsWith('image/')) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Please upload an image file"
+      });
+      return;
+    }
+
+    // Check file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Image size should be less than 5MB"
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      // Generate unique file name
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${currentUser.id}-${Date.now()}.${fileExt}`;
+
+      // Upload to Supabase
+      const { data, error } = await supabase.storage
+        .from('profile-images')
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: true // Replace if exists
+        });
+
+      if (error) throw error;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('profile-images')
+        .getPublicUrl(fileName);
+
+      setImage(publicUrl);
+    } catch (error) {
+      console.error('Upload error:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to upload image"
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const onSubmit = async () => {
     setIsLoading(true);
     try {
-      await axios.post('/api/profile', { image });
+      if (currentUser?.image && currentUser.image.includes(process.env.NEXT_PUBLIC_SUPABASE_URL)) {
+        const oldFileName = currentUser.image.split('/').pop();
+        if (oldFileName) {
+          await supabase.storage
+            .from('profile-images')
+            .remove([oldFileName]);
+        }
+      }
+
+      await axios.post('/api/chat/profile', { image });
       router.refresh();
-      toast.success('Profile picture updated!');
+      toast({
+        title: "Success",
+        description: "Profile picture updated!"
+      });
       onClose();
     } catch (error) {
-      toast.error('Failed to update profile picture');
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to update profile picture"
+      });
     } finally {
       setIsLoading(false);
     }
   };
 
   if (!isOpen) {
-    return null; // Do not render if the modal is closed
+    return null;
   }
 
   return (
@@ -102,22 +178,22 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
           <div className="flex flex-col items-center space-y-4">
             <div className="relative h-32 w-32 group">
               <Image
-                src={image || '/placeholder.jpg'}
+                src={image || '/image.jpg'}
                 alt="Profile"
                 fill
                 className="rounded-full object-cover border-4 border-white dark:border-gray-800 shadow-md"
               />
-              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                <CldUploadButton
-                  options={{ maxFiles: 1 }}
-                  onUpload={handleUpload}
-                  uploadPreset="your-preset"
-                >
-                  <div className="bg-black/50 rounded-full p-2 backdrop-blur-sm">
-                    <span className="text-white text-sm">Change</span>
-                  </div>
-                </CldUploadButton>
-              </div>
+              <label className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileSelect}
+                  className="hidden"
+                />
+                <div className="bg-black/50 rounded-full p-2 backdrop-blur-sm">
+                  <Upload className="h-5 w-5 text-white" />
+                </div>
+              </label>
             </div>
           </div>
 

@@ -1,21 +1,20 @@
-// lib/pusher.ts
 import PusherServer from 'pusher';
 import PusherClient from 'pusher-js';
 
 // Create a singleton instance for the server
 const pusherServerClient = new PusherServer({
-  appId: "1921962",
-  key: "feb370272fdb536a6de7",
-  secret: "4d4eb6d9706204c37bf4",
-  cluster: "ap2",
+  appId: process.env.NEXT_PUBLIC_PUSHER_APP_ID!,
+  key: process.env.NEXT_PUBLIC_PUSHER_KEY!,
+  secret: process.env.NEXT_PUBLIC_PUSHER_SECRET!,
+  cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER!,
   useTLS: true
 });
 
 // Create a singleton instance for the client
 const pusherClientInstance = new PusherClient(
-  "feb370272fdb536a6de7",
+  process.env.NEXT_PUBLIC_PUSHER_KEY!,
   {
-    cluster: "ap2",
+    cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER!,
     authEndpoint: '/api/pusher/auth',
     authTransport: 'ajax',
     auth: {

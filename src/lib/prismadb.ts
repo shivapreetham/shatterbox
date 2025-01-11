@@ -7,9 +7,7 @@ const globalForPrisma = globalThis as unknown as {
 
 // Create client without transactions
 const prisma = globalForPrisma.prisma ?? 
-  new PrismaClient({
-    log: ['error', 'warn'],
-  })
+  new PrismaClient()
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
 

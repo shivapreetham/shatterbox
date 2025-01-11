@@ -6,17 +6,16 @@ export async function POST(request: Request) {
   try {
     const currentUser = await getCurrentUser();
     const body = await request.json();
-    const { username, image } = body;
-    
+    const { image } = body;
     if (!currentUser) {
       return new NextResponse('Unauthorized', { status: 401 });
     }
+    console.log(image)
     const updatedUser = await prisma.user.update({
       where: {
         id: currentUser.id,
       },
       data: {
-        username,
         image,
       },
     });
