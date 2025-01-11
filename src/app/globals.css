@@ -1,0 +1,103 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+@layer base {
+  :root {
+    /* Light theme remains unchanged */
+    --background: 220 25% 97%;
+    --foreground: 220 45% 15%;
+    --card: 0 0% 100%;
+    --card-foreground: 220 45% 15%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 45% 15%;
+    --primary: 220 85% 45%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 220 25% 95%;
+    --secondary-foreground: 220 45% 15%;
+    --muted: 220 25% 95%;
+    --muted-foreground: 220 25% 45%;
+    --accent: 220 25% 95%;
+    --accent-foreground: 220 45% 15%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 220 25% 90%;
+    --input: 220 25% 90%;
+    --ring: 220 85% 45%;
+    --radius: 0.6rem;
+  }
+
+  .dark {
+    /* Dark theme - enhanced with violet/purple tones */
+    --background: 240 30% 4%;  /* Deep black with slight purple tint */
+    --foreground: 250 15% 95%;
+    --card: 240 30% 6%;
+    --card-foreground: 250 15% 95%;
+    --popover: 240 30% 6%;
+    --popover-foreground: 250 15% 95%;
+    --primary: 265 85% 65%;  /* Vibrant purple */
+    --primary-foreground: 240 30% 4%;
+    --secondary: 250 30% 10%;
+    --secondary-foreground: 250 15% 95%;
+    --muted: 250 30% 10%;
+    --muted-foreground: 250 15% 65%;
+    --accent: 280 50% 25%;  /* Deep purple accent */
+    --accent-foreground: 250 15% 95%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 250 15% 95%;
+    --border: 250 30% 12%;
+    --input: 250 30% 10%;
+    --ring: 265 85% 65%;
+    --radius: 0.6rem;
+  }
+}
+
+@layer utilities {
+  /* Enhanced card shadows with purple tint */
+  /* .shadow-card {
+    @apply transition-all duration-300;
+    box-shadow: 0 4px 12px -2px rgb(var(--primary) / 0.1), 
+                0 2px 6px -1px rgb(var(--primary) / 0.1);
+  }
+  
+  .shadow-card-hover {
+    @apply transition-all duration-300;
+    box-shadow: 0 12px 24px -4px rgb(var(--primary) / 0.15), 
+                0 6px 12px -2px rgb(var(--primary) / 0.15);
+  } */
+
+  /* .dark .shadow-card {
+    box-shadow: 0 4px 12px -2px rgba(147, 51, 234, 0.2),  /* Purple tinted shadow */
+                /* 0 2px 6px -1px rgba(147, 51, 234, 0.1);
+  }
+  
+  .dark .shadow-card-hover {
+    box-shadow: 0 12px 24px -4px rgba(147, 51, 234, 0.3),
+                0 6px 12px -2px rgba(147, 51, 234, 0.2);
+  } */ 
+
+  /* Gradient backgrounds with purple */
+  /* .bg-gradient-primary {
+    @apply bg-gradient-to-r from-primary via-primary/90 to-primary/80;
+  }
+
+  .dark .bg-gradient-primary {
+    @apply bg-gradient-to-r from-purple-600 via-purple-500 to-purple-700;
+  } */
+
+  /* Glass effect for cards */
+  .glass-card {
+    @apply bg-background/50 backdrop-blur-sm;
+    border: 1px solid rgb(var(--primary) / 0.1);
+  }
+
+  .glass-card:hover {
+    border-color: rgb(var(--primary) / 0.2);
+  }
+
+  
+}
