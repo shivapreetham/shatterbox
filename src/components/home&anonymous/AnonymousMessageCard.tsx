@@ -1,8 +1,8 @@
-import React from "react";
-import axios, { AxiosError } from "axios";
-import dayjs from "dayjs";
-import { X, MessageCircle, Clock, Trash2 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import React from 'react';
+import type { MouseEvent } from 'react';
+import { motion } from 'framer-motion';
+import dayjs from 'dayjs';
+import { Trash2, Clock, Star, Share2, MoreHorizontal } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -13,11 +13,19 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import { Button } from "@/components/ui/button";
-import { useToast } from "@/app/hooks/use-toast";
-import { ApiResponse } from "@/types/ApiResponse";
-import { motion } from "framer-motion";
+} from '@/components/ui/alert-dialog';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/app/hooks/use-toast';
+import type { ApiResponse } from '@/types/ApiResponse';
+import axios, { AxiosError } from 'axios';
+import { Badge } from "@/components/ui/badge";
 
 interface Message {
   id: string;
@@ -26,15 +34,16 @@ interface Message {
   userId: string;
 }
 
-type MessageCardProps = {
+interface MessageCardProps {
   message: Message;
   onMessageDelete: (messageId: string) => void;
-};
+}
 
-export function MessageCard({ message, onMessageDelete }: MessageCardProps) {
+export function MessageCard({ message, onMessageDelete }: MessageCardProps): JSX.Element {
   const { toast } = useToast();
+  const [isStarred, setIsStarred] = React.useState<boolean>(false);
 
-  const handleDeleteConfirm = async () => {
+  const handleDeleteConfirm = async (): Promise<void> => {
     try {
       const response = await axios.delete<ApiResponse>(
         `/api/anonymous/delete-message/${message.id}`
@@ -42,88 +51,128 @@ export function MessageCard({ message, onMessageDelete }: MessageCardProps) {
       
       if (response.data.success) {
         toast({
-          title: "Success",
-          description: response.data.message,
+          title: "Message deleted",
+          description: "The message has been removed from your inbox",
         });
         onMessageDelete(message.id);
       } else {
         throw new Error(response.data.message);
       }
-    } catch (error) {
+    } catch (error: any) {
       const axiosError = error as AxiosError<ApiResponse>;
       toast({
-        title: "Error",
-        description: axiosError.response?.data.message ?? "Failed to delete message",
+        title: "Deletion failed",
+        description: axiosError.response?.data.message ?? "Could not delete message",
         variant: "destructive",
       });
     }
   };
 
+  const handleShare = (e: MouseEvent): void => {
+    e.preventDefault();
+    toast({
+      title: "Share feature",
+      description: "Coming soon!",
+    });
+  };
+
   return (
     <motion.div
+      layout
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
-      transition={{ duration: 0.3 }}
-      className="group"
+      className="group relative overflow-hidden rounded-xl border bg-card transition-all hover:shadow-lg"
     >
-      <Card className="bg-card/50 backdrop-blur-sm border border-primary/10 hover:border-primary/30 transition-all duration-300 hover:shadow-lg hover:shadow-primary/5">
-        <CardHeader className="p-4">
-          <div className="flex gap-2 justify-between items-start">
-            <div className="flex items-start gap-3 w-full">
-              <div className="mt-1">
-                <MessageCircle className="w-5 h-5 text-primary/60" />
-              </div>
-              <div className="flex-1">
-                <CardTitle className="text-base font-bold leading-relaxed text-foreground/90 break-words">
-                  {message.content}
-                </CardTitle>
-              </div>
-            </div>
+      <div className="absolute right-2 top-2 z-10">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100">
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-40">
+            <DropdownMenuItem onClick={handleShare}>
+              <Share2 className="mr-2 h-4 w-4" /> Share
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setIsStarred(!isStarred)}>
+              <Star className="mr-2 h-4 w-4" /> 
+              {isStarred ? 'Unstar' : 'Star'}
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-destructive/10 hover:text-destructive"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </Button>
+                <DropdownMenuItem className="text-destructive">
+                  <Trash2 className="mr-2 h-4 w-4" /> Delete
+                </DropdownMenuItem>
               </AlertDialogTrigger>
-              <AlertDialogContent className="sm:max-w-[425px]">
+              <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle className="text-lg font-semibold">
-                    Delete Message?
-                  </AlertDialogTitle>
-                  <AlertDialogDescription className="text-muted-foreground">
-                    This action cannot be undone. This message will be permanently deleted
-                    from your inbox.
-                  </AlertDialogDescription>
+                  <AlertDialogTitle>Delete this message?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This action cannot be undone. The message will be permanently deleted. </AlertDialogDescription>
                 </AlertDialogHeader>
-                <AlertDialogFooter className="gap-2">
-                  <AlertDialogCancel className="hover:bg-secondary/80">
-                    Keep Message
-                  </AlertDialogCancel>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
                   <AlertDialogAction
                     onClick={handleDeleteConfirm}
                     className="bg-destructive hover:bg-destructive/90"
                   >
-                    Delete Message
+                    Delete
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
+      <div className="relative p-6">
+        {isStarred && (
+          <Badge 
+            variant="secondary" 
+            className="absolute left-4 top-4"
+          >
+            Starred
+          </Badge>
+        )}
+        
+        <div className="space-y-4">
+          <div className="min-h-[80px] space-y-2">
+            <p className="text-sm/relaxed">
+              {message.content}
+            </p>
           </div>
-        </CardHeader>
-        <CardContent className="pt-0 pb-4 px-4">
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <Clock className="w-3.5 h-3.5" />
-            <span>
-              {dayjs(message.createdAt).format("MMM D, YYYY h:mm A")}
-            </span>
+          
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Clock className="h-3.5 w-3.5" />
+              <time dateTime={dayjs(message.createdAt).format()}>
+                {dayjs(message.createdAt).format("MMM D, YYYY h:mm A")}
+              </time>
+            </div>
+            
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 opacity-0 transition-opacity group-hover:opacity-100"
+              onClick={() => setIsStarred(!isStarred)}
+            >
+              <Star 
+                className={`h-4 w-4 transition-colors ${
+                  isStarred ? 'fill-primary text-primary' : ''
+                }`} 
+              />
+            </Button>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
+      
+      <div 
+        className={`absolute inset-x-0 bottom-0 h-1 transition-colors ${
+          isStarred ? 'bg-primary' : 'bg-transparent'
+        }`}
+      />
     </motion.div>
   );
 }

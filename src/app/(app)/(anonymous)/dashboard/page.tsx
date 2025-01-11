@@ -1,30 +1,47 @@
 'use client';
+
+import type { User } from 'next-auth';
+import type { AnonymousMessage } from '@prisma/client';
+import type { ApiResponse } from '@/types/ApiResponse';
+import type { AxiosError } from 'axios';
+
 import { MessageCard } from '@/components/home&anonymous/AnonymousMessageCard';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/app/hooks/use-toast';
-import { ApiResponse } from '@/types/ApiResponse';
 import { zodResolver } from '@hookform/resolvers/zod';
-import axios, { AxiosError } from 'axios';
-import { Link, Loader2, RefreshCcw } from 'lucide-react';
-import { User } from 'next-auth';
+import axios from 'axios';
+import { Copy, Link2, Loader2, RefreshCcw, Settings2 } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { AcceptAnonymousMessageSchema } from '@/schemas/acceptAnonymousMessageSchema';
-import prisma from '@/lib/prismadb'; // Ensure prisma is imported
-import { AnonymousMessage } from '@prisma/client';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
-
-function UserDashboard() {
+function UserDashboard(): JSX.Element {
   const [messages, setMessages] = useState<AnonymousMessage[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isSwitchLoading, setIsSwitchLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isSwitchLoading, setIsSwitchLoading] = useState<boolean>(false);
+  const [showSettings, setShowSettings] = useState<boolean>(false);
 
   const { toast } = useToast();
 
-  const handleDeleteMessage = (messageId: string) => {
+  const handleDeleteMessage = (messageId: string): void => {
     setMessages(messages.filter((message) => message.id !== messageId));
   };
 
@@ -37,16 +54,16 @@ function UserDashboard() {
   });
 
   const { register, watch, setValue } = form;
-  const acceptMessages = watch('acceptMessages');
+  const acceptMessages: boolean = watch('acceptMessages');
 
-  const fetchAcceptMessages = useCallback(async () => {
+  const fetchAcceptMessages = useCallback(async (): Promise<void> => {
     setIsSwitchLoading(true);
     try {
       const response = await axios.get<ApiResponse>('/api/anonymous/accept-messages');
       if (response.data.success && response.data.isAcceptingAnonymousMessages !== undefined) {
         setValue('acceptMessages', response.data.isAcceptingAnonymousMessages);
       } else {
-        setValue('acceptMessages', false); // Default to false if undefined
+        setValue('acceptMessages', false);
         if (!response.data.success) {
           throw new Error(response.data.message);
         }
@@ -58,54 +75,53 @@ function UserDashboard() {
         description: axiosError.response?.data.message ?? 'Failed to fetch message settings',
         variant: 'destructive',
       });
-      setValue('acceptMessages', false); // Set to false on error
+      setValue('acceptMessages', false);
     } finally {
       setIsSwitchLoading(false);
     }
   }, [setValue, toast]);
-  const fetchMessages = useCallback(
-    async (refresh: boolean = false) => {
-      setIsLoading(true);
-      try {
-        const response = await axios.get<ApiResponse>('/api/anonymous/get-messages');
-        if (!response.data.success) {
-          setMessages([]);
-          if (refresh) {
-            toast({
-              title: 'No Messages',
-              description: response.data.message,
-            });
-          }
-          return;
-        }
-        setMessages(response.data.anonymousMessages || []);
+
+  const fetchMessages = useCallback(async (refresh: boolean = false): Promise<void> => {
+    setIsLoading(true);
+    try {
+      const response = await axios.get<ApiResponse>('/api/anonymous/get-messages');
+      if (!response.data.success) {
+        setMessages([]);
         if (refresh) {
           toast({
-            title: 'Success',
-            description: 'Messages refreshed successfully',
+            title: 'No Messages',
+            description: response.data.message,
           });
         }
-      } catch (error) {
-        const axiosError = error as AxiosError<ApiResponse>;
-        toast({
-          title: 'Error',
-          description: axiosError.response?.data.message ?? 'Failed to fetch messages',
-          variant: 'destructive',
-        });
-        setMessages([]);
-      } finally {
-        setIsLoading(false);
+        return;
       }
-    },
-    [toast]
-  );
+      setMessages(response.data.anonymousMessages || []);
+      if (refresh) {
+        toast({
+          title: 'Success',
+          description: 'Messages refreshed successfully',
+        });
+      }
+    } catch (error: any) {
+      const axiosError = error as AxiosError<ApiResponse>;
+      toast({
+        title: 'Error',
+        description: axiosError.response?.data.message ?? 'Failed to fetch messages',
+        variant: 'destructive',
+      });
+      setMessages([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [toast]);
+
   useEffect(() => {
-    if (!session || !session.user) return;
+    if (!session?.user) return;
     fetchMessages();
     fetchAcceptMessages();
   }, [session, fetchAcceptMessages, fetchMessages]);
 
-  const handleSwitchChange = async () => {
+  const handleSwitchChange = async (): Promise<void> => {
     try {
       const response = await axios.post<ApiResponse>('/api/anonymous/accept-messages', {
         acceptAnonymousMessages: !acceptMessages,
@@ -130,16 +146,30 @@ function UserDashboard() {
     }
   };
 
-  if (!session || !session.user) {
-    return <Link href="/sign-in">please Login</Link>;
+  if (!session?.user) {
+    return (
+      <div className="flex min-h-[50vh] items-center justify-center">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle>Authentication Required</CardTitle>
+            <CardDescription>Please sign in to access your dashboard</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button asChild className="w-full">
+              <Link2 href="/sign-in">Sign In</Link2>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   const { username } = session.user as User;
   const baseUrl = `${window.location.protocol}//${window.location.host}`;
   const profileUrl = `${baseUrl}/u/${username}`;
 
-  const copyToClipboard = () => {
-    navigator.clipboard.writeText(profileUrl);
+  const copyToClipboard = async (): Promise<void> => {
+    await navigator.clipboard.writeText(profileUrl);
     toast({
       title: 'URL Copied!',
       description: 'Profile URL has been copied to clipboard.',
@@ -147,77 +177,120 @@ function UserDashboard() {
   };
 
   return (
-    <div className="my-4 mx-4 md:mx-8 lg:mx-auto p-6 bg-gradient-to-br from-background via-secondary/5 to-background rounded-lg w-full max-w-6xl">
-      <h1 className="text-3xl md:text-4xl font-bold mb-6">
-        <span className="text-primary hover:text-primary/90 transition-colors">{username}'s</span> Dashboard
-      </h1>
-
-      <div className="mb-4">
-        <h2 className="text-lg font-medium mb-2">Your Unique Link</h2>
-        <div className="flex items-center gap-2">
-          <input
-            type="text"
-            value={profileUrl}
-            disabled
-            className="w-full p-2 rounded-lg bg-secondary/10 border border-primary/10 focus:border-primary/20 transition-colors"
-          />
-          <Button 
-            onClick={() => {
-              navigator.clipboard.writeText(profileUrl);
-              toast({
-                title: 'URL Copied!',
-                description: 'Profile URL has been copied to clipboard.',
-              });
-            }}
-            className="hover:shadow-md transition-all duration-200"
-          >
-            Copy
-          </Button>
+    <div className="min-h-screen bg-gradient-to-b from-background via-background/95 to-background">
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-4xl font-bold tracking-tight">
+              Welcome back, <span className="text-primary">{username}</span>
+            </h1>
+            <p className="mt-2 text-muted-foreground">
+              Manage your anonymous messages and preferences
+            </p>
+          </div>
+          <Dialog open={showSettings} onOpenChange={setShowSettings}>
+            <DialogTrigger asChild>
+              <Button variant="outline" size="icon">
+                <Settings2 className="h-5 w-5" />
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Dashboard Settings</DialogTitle>
+                <DialogDescription>Configure your messaging preferences</DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="flex items-center justify-between rounded-lg border p-4">
+                  <div className="space-y-0.5">
+                    <h4 className="text-sm font-medium">Anonymous Messages</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Allow others to send you anonymous messages
+                    </p>
+                  </div>
+                  <Switch
+                    {...register('acceptMessages')}
+                    checked={acceptMessages}
+                    onCheckedChange={handleSwitchChange}
+                    disabled={isSwitchLoading}
+                    className="data-[state=checked]:bg-primary"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <h4 className="text-sm font-medium">Your Profile URL</h4>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={profileUrl}
+                      readOnly
+                      className="flex-1 rounded-md border bg-secondary/10 px-3 py-2 text-sm"
+                    />
+                    <Button size="sm" onClick={copyToClipboard}>
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
-      </div>
 
-      <div className="flex items-center gap-2 mb-4">
-        <Switch
-          {...register('acceptMessages')}
-          checked={acceptMessages}
-          onCheckedChange={handleSwitchChange}
-          disabled={isSwitchLoading}
-          className="data-[state=checked]:bg-primary"
-        />
-        <span>
-          Accept Private Anonymous Messages: {acceptMessages ? 'On' : 'Off'}
-        </span>
-      </div>
-
-      <Separator className="mb-4 bg-primary/10" />
-
-      <Button
-        variant="outline"
-        onClick={() => fetchMessages(true)}
-        className="mb-4 hover:bg-secondary/10 transition-colors"
-      >
-        {isLoading ? (
-          <Loader2 className="h-4 w-4 animate-spin" />
-        ) : (
-          <RefreshCcw className="h-4 w-4" />
-        )}
-      </Button>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {messages.length > 0 ? (
-          messages.map((message: any) => (
-            <MessageCard
-              key={message.id}
-              message={message}
-              onMessageDelete={(id) => setMessages(messages.filter(m => m.id !== id))}
-            />
-          ))
-        ) : (
-          <p className="text-muted-foreground">No messages to display.</p>
-        )}
+        <div className="mt-8 space-y-6">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+              <div>
+                <CardTitle>Anonymous Messages</CardTitle>
+                <CardDescription>
+                  {messages.length 
+                    ? `You have ${messages.length} message${messages.length === 1 ? '' : 's'}`
+                    : 'No messages yet'}
+                </CardDescription>
+              </div>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => fetchMessages(true)}
+                className="h-8 w-8"
+              >
+                {isLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <RefreshCcw className="h-4 w-4" />
+                )}
+              </Button>
+            </CardHeader>
+            <Separator className="mb-4" />
+            <CardContent>
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {messages.length > 0 ? (
+                  messages.map((message) => (
+                    <MessageCard
+                      key={message.id}
+                      message={message}
+                      onMessageDelete={handleDeleteMessage}
+                    />
+                  ))
+                ) : (
+                  <div className="col-span-full flex flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center">
+                    <p className="text-muted-foreground">
+                      No messages to display. Share your profile link to receive anonymous messages.
+                    </p>
+                    <Button
+                      variant="outline"
+                      className="mt-4"
+                      onClick={copyToClipboard}
+                    >
+                      <Copy className="mr-2 h-4 w-4" />
+                      Copy Profile URL
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );
-};
+}
 
 export default UserDashboard;
