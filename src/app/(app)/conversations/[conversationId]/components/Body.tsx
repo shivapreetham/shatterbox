@@ -7,7 +7,6 @@ import MessageBox from './MessageBox';
 import axios from 'axios';
 import { pusherClient } from '@/lib/pusher';
 import { find } from 'lodash';
-import getConversationById from '@/app/actions/getConversationById';
 import { FullConversationType } from '@/types';
 interface BodyProps {
   initialMessages: FullMessageType[];

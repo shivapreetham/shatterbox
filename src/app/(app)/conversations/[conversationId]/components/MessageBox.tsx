@@ -101,7 +101,7 @@ const MessageBox: React.FC<MessageBoxProps> = ({
           <div className={senderName}>
             {isAnonymous 
               ? `Anonymous ${isOwn ? '(You)' : 'User'}`
-              : (data.sender?.name || data.sender?.email)
+              : (data.sender?.username || data.sender?.email)
             }
           </div>
           <div className={timeStamp}>

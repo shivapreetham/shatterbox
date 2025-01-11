@@ -1,13 +1,11 @@
-import { IUser } from '@/models/User';
-import { IMessage } from '@/models/chat/ChatMessage';
-import { IConversation } from '@/models/chat/ChatConversation';
+import { Conversation, Message, User } from '@prisma/client';
 
-export type FullMessageType = IMessage & {
-  sender: IUser;
-  seen: IUser[];
+export type FullMessageType = Message & {
+  sender: User;
+  seen: User[];
 };
 
-export type FullConversationType = IConversation & {
-  users: IUser[];
+export type FullConversationType = Conversation & {
+  users: User[];
   messages: FullMessageType[];
 };

@@ -99,7 +99,7 @@ const Form = () => {
       const fileName = `${conversationId}-${Date.now()}.jpg`;
 
       // Upload
-      const { data, error } = await supabase.storage
+      const { error } = await supabase.storage
         .from('chat-images')
         .upload(fileName, file);
 

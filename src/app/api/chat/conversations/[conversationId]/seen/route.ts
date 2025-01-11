@@ -3,11 +3,9 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prismadb';
 import { pusherServer } from '@/lib/pusher';
 
-interface IParams {
-  conversationId?: string;
-}
 
-export async function POST(request: Request, { params }: { params: IParams }) {
+
+export async function POST(request: Request, params:any) { {
   try {
     const currentUser = await getCurrentUser();
     const { conversationId } =await params;
@@ -82,4 +80,5 @@ export async function POST(request: Request, { params }: { params: IParams }) {
     console.log(error, 'ERROR_MESSAGES_SEEN');
     return new NextResponse('Internal Server Error', { status: 500 });
   }
+}
 }

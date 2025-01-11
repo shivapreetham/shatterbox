@@ -92,15 +92,6 @@ const ConversationList: React.FC<ConversationListProps> = ({
           isOpen ? 'hidden' : 'block w-full left-0'
         )}
       >
-        <style jsx global>{`
-          .scrollbar-hide {
-            -ms-overflow-style: none;
-            scrollbar-width: none;
-          }
-          .scrollbar-hide::-webkit-scrollbar {
-            display: none;
-          }
-        `}</style>
         <div className="px-5">
           <div className="flex justify-between mb-4 py-4 border-b border-border/30">
             <div className="text-2xl font-bold text-foreground">Messages</div>

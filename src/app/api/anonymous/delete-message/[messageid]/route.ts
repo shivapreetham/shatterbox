@@ -10,7 +10,7 @@ interface SessionUser {
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { messageid: string } }
+  params:any
 ) {
   try {
     // Get session and validate user
@@ -55,7 +55,7 @@ export async function DELETE(
       { success: true, message: 'Message deleted successfully' },
       { status: 200 }
     );
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error in DELETE:', error);
     
     // Check if it's a Prisma error related to invalid ID format

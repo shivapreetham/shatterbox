@@ -51,7 +51,7 @@ function UserDashboard() {
           throw new Error(response.data.message);
         }
       }
-    } catch (error) {
+    } catch (error: any) {
       const axiosError = error as AxiosError<ApiResponse>;
       toast({
         title: 'Error',
@@ -120,7 +120,7 @@ function UserDashboard() {
       } else {
         throw new Error(response.data.message);
       }
-    } catch (error) {
+    } catch (error: any) {
       const axiosError = error as AxiosError<ApiResponse>;
       toast({
         title: 'Error',
@@ -205,7 +205,7 @@ function UserDashboard() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {messages.length > 0 ? (
-          messages.map((message) => (
+          messages.map((message: any) => (
             <MessageCard
               key={message.id}
               message={message}

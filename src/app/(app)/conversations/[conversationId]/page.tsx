@@ -5,11 +5,9 @@ import Header from './components/Header';
 import Body from './components/Body';
 import Form from './components/Form';
 
-interface IParams {
-  conversationId: string;
-}
 
-const ConversationId = async ({ params }: { params: IParams }) => {
+
+const ConversationId = async ( params :any) => {
   const cparams= await params;
   const  conversationId = cparams.conversationId;
   const conversation = await getConversationById(conversationId);
@@ -32,7 +30,7 @@ const ConversationId = async ({ params }: { params: IParams }) => {
           <Header conversation={conversation} />
         </div>
         <div className="flex-1 overflow-y-auto">
-          <Body initialMessages={messages} conversation={conversation} />
+          <Body initialMessages={messages} conversation={conversation as any} />
         </div>
         <div className="border-t border-border shadow-card">
           <Form />

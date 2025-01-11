@@ -78,7 +78,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     
     if (!match) return null;
     
-    const [_, batch, program, branchCode] = match;
+    const [ batch, program, branchCode] = match;
     
     return {
       batch,
@@ -97,7 +97,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
       const fileName = `${currentUser.id}-${Date.now()}.jpg`;
   
       // Upload
-      const { data, error } = await supabase.storage
+      const { error } = await supabase.storage
         .from('profile-images')
         .upload(fileName, file);
   
@@ -152,7 +152,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
         description: 'Profile picture updated!',
       });
       onClose();
-    } catch (error) {
+    } catch (error: any) {
       toast({
         variant: 'destructive',
         title: 'Error',

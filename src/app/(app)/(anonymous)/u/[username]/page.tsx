@@ -49,7 +49,7 @@ export default function SendMessage() {
         variant: 'default',
       });
       form.reset({ ...form.getValues(), content: '' });
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: 'Error',
         description: error.response?.data?.message ?? 'Failed to send message',
@@ -67,7 +67,7 @@ export default function SendMessage() {
       const response = await axios.post<ApiResponse>('/api/anonymous/suggest-messages', { topic });
       setMessages(response.data.message);
       toast({ title: "Suggestions updated", variant: 'default' });
-    } catch (error) {
+    } catch (error: any) {
       toast({ title: "Error fetching suggestions", variant: 'destructive' });
     } finally {
       setIsLoadingSuggestions(false);
