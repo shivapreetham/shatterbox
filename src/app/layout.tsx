@@ -5,7 +5,6 @@ import { Toaster } from "@/components/ui/toaster";
 import "./globals.css";
 import { ThemeProvider } from "@/context/ThemeProvider";
 import ActiveStatus from "@/components/chat/ActiveStatus";
-import Navbar from "@/components/home&anonymous/Navbar";
 export const metadata: Metadata = {
   title: "shatterbox",
   description: "so whom do you trust?!!",
