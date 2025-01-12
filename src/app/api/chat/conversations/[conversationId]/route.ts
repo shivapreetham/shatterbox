@@ -6,12 +6,13 @@ import { pusherServer } from '@/lib/pusher';
 
 export async function DELETE(
   request: Request,
-  params:any
+  {params}:{params :any}
 ) {
   try {
     const currentUser = await getCurrentUser();
     const { conversationId } = params;
-
+    console.log(params)
+    console.log(conversationId);
     if (!currentUser?.id || !currentUser?.email) {
       return new NextResponse('Unauthorized', { status: 401 });
     }

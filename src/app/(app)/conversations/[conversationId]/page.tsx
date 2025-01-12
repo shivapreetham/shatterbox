@@ -7,12 +7,13 @@ import Form from './components/Form';
 
 
 
-const ConversationId = async ( params :any) => {
-  const cparams= await params;
-  const  conversationId = cparams.conversationId;
+const ConversationId = async ( {params}:{params :any}) => {
+
+  const  conversationId = params.conversationId;
   const conversation = await getConversationById(conversationId);
   const messages = await getMessages(conversationId);
-
+  console.log(params)
+  console.log(conversationId)
   if (!conversation) {
     return (
       <div className="lg:pl-60 h-full">

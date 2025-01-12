@@ -152,12 +152,12 @@ export default function SignUpForm() {
               Sign Up
             </Link>
           </p>
-          <Link 
+          {/* <Link 
             href="/forgot-password" 
             className="text-sm text-muted-foreground hover:text-foreground/80 transition-colors duration-300"
           >
             Forgot your password?
-          </Link>
+          </Link> */}
         </div>
       </div>
     </div>

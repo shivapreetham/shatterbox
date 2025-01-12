@@ -79,7 +79,7 @@ const ConversationBox: React.FC<ConversationBoxProps> = ({
         <div className="focus:outline-none">
           <div className="flex justify-between items-center mb-1">
             <p className="text-md font-medium text-foreground">
-              {conversation.name || otherUser.name}
+              {conversation.name || otherUser?.username}
             </p>
 
             {lastMessage?.createdAt && (

@@ -10,7 +10,7 @@ interface SessionUser {
 
 export async function DELETE(
   request: NextRequest,
-  params:any
+  {params}:{params :any}
 ) {
   try {
     // Get session and validate user

@@ -5,7 +5,7 @@ import { pusherServer } from '@/lib/pusher';
 
 
 
-export async function POST(request: Request, params:any) { {
+export async function POST(request: Request, {params}:{params :any}) { {
   try {
     const currentUser = await getCurrentUser();
     const { conversationId } =await params;

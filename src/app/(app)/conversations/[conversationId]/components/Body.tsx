@@ -8,6 +8,7 @@ import axios from 'axios';
 import { pusherClient } from '@/lib/pusher';
 import { find } from 'lodash';
 import { FullConversationType } from '@/types';
+import { Loader } from 'lucide-react';
 interface BodyProps {
   initialMessages: FullMessageType[];
   conversation: FullConversationType;
@@ -17,6 +18,7 @@ const Body: React.FC<BodyProps> = ({ initialMessages, conversation }) => {
   const [messages, setMessages] = useState(initialMessages);
   const [isAnonymous, setIsAnonymous] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+  // Add loading state
 
   const { conversationId } = useConversation();
 
@@ -36,6 +38,7 @@ const Body: React.FC<BodyProps> = ({ initialMessages, conversation }) => {
     loadConversation();
   }, [conversationId]);
 
+  
   // Rest of your existing useEffect hooks remain the same
   useEffect(() => {
     axios.post(`/api/chat/conversations/${conversationId}/seen`);
