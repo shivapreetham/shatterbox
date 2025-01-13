@@ -1,3 +1,4 @@
+// Body.tsx
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
@@ -8,7 +9,7 @@ import axios from 'axios';
 import { pusherClient } from '@/lib/pusher';
 import { find } from 'lodash';
 import { FullConversationType } from '@/types';
-import { Loader } from 'lucide-react';
+
 interface BodyProps {
   initialMessages: FullMessageType[];
   conversation: FullConversationType;
@@ -18,15 +19,11 @@ const Body: React.FC<BodyProps> = ({ initialMessages, conversation }) => {
   const [messages, setMessages] = useState(initialMessages);
   const [isAnonymous, setIsAnonymous] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
-  // Add loading state
-
   const { conversationId } = useConversation();
 
-  // Fetch conversation data safely
   useEffect(() => {
     const loadConversation = async () => {
       try {
-        // console.log(conversation)
         if (conversation) {
           setIsAnonymous(!!conversation.isGroup && !!conversation.isAnonymous);
         }
@@ -38,8 +35,6 @@ const Body: React.FC<BodyProps> = ({ initialMessages, conversation }) => {
     loadConversation();
   }, [conversationId]);
 
-  
-  // Rest of your existing useEffect hooks remain the same
   useEffect(() => {
     axios.post(`/api/chat/conversations/${conversationId}/seen`);
   }, [conversationId]);
@@ -68,15 +63,46 @@ const Body: React.FC<BodyProps> = ({ initialMessages, conversation }) => {
       );
     };
 
+    // Add message deletion handler
+    const deleteMessageHandler = (messageId: string) => {
+      setMessages((prevMessages) => 
+        prevMessages.filter((message) => message.id !== messageId)
+      );
+    };
+
     pusherClient.bind('messages:new', messageHandler);
     pusherClient.bind('message:update', updateMessageHandler);
+    pusherClient.bind('message:delete', deleteMessageHandler);
 
     return () => {
       pusherClient.unsubscribe(conversationId);
       pusherClient.unbind('messages:new', messageHandler);
       pusherClient.unbind('message:update', updateMessageHandler);
+      pusherClient.unbind('message:delete', deleteMessageHandler);
     };
   }, [conversationId]);
+
+  // Add local message deletion handler
+  const handleMessageDelete = async (messageId: string) => {
+    try {
+      // Optimistically update UI
+      setMessages((prevMessages) => 
+        prevMessages.filter((message) => message.id !== messageId)
+      );
+      
+      // Make API call
+      await axios.delete(`/api/chat/messages/${messageId}`);
+      
+      // No need for router.refresh() as Pusher will handle the update
+    } catch (error) {
+      console.error('Error deleting message:', error);
+      // Revert the optimistic update if the deletion failed
+      const deletedMessage = messages.find((message) => message.id === messageId);
+      if (deletedMessage) {
+        setMessages((prevMessages) => [...prevMessages, deletedMessage]);
+      }
+    }
+  };
 
   return (
     <div className="flex-1 overflow-y-auto">
@@ -86,9 +112,9 @@ const Body: React.FC<BodyProps> = ({ initialMessages, conversation }) => {
           key={message.id}
           data={message}
           isAnonymous={isAnonymous}
+          onDelete={handleMessageDelete}
         />
       ))}
-
       <div ref={bottomRef} className="pt-24" />
     </div>
   );

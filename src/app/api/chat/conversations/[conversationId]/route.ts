@@ -10,9 +10,9 @@ export async function DELETE(
 ) {
   try {
     const currentUser = await getCurrentUser();
-    const { conversationId } = params;
-    console.log(params)
-    console.log(conversationId);
+    const { conversationId } = await params;
+    // console.log(params)
+    // console.log(conversationId);
     if (!currentUser?.id || !currentUser?.email) {
       return new NextResponse('Unauthorized', { status: 401 });
     }
