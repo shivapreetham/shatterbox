@@ -7,8 +7,8 @@ export async function POST(request: Request) {
   try {
     const currentUser = await getCurrentUser();
     const body = await request.json();
-    const { userId, isGroup, members, name, isAnonymous } = body;
-
+    const { name  , members, isAnonymous, isGroup, userId } = body;
+    // console.log(currentUser);
     if (!currentUser?.id || !currentUser?.email) {
       return new NextResponse('Unauthorized', { status: 401 });
     }

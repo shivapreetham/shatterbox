@@ -1,20 +1,22 @@
-// Input.tsx
-'use client';
-
+'use client'
+// components/Input.tsx
+import React from 'react';
 import clsx from 'clsx';
-import { FieldErrors, FieldValues, UseFormRegister } from 'react-hook-form';
-
-interface InputProps {
+import { FieldErrors, FieldValues, UseFormRegister, Path } from 'react-hook-form';
+import { Loader2 } from 'lucide-react';
+interface InputProps<T extends FieldValues> {
   label: string;
-  id: string;
+  id: Path<T>;
   type?: string;
   required?: boolean;
-  register: UseFormRegister<FieldValues>;
-  errors: FieldErrors;
+  register: UseFormRegister<T>;
+  errors: FieldErrors<T>;
   disabled?: boolean;
+  error?: string | null;
+  loading?: boolean;
 }
 
-const Input: React.FC<InputProps> = ({
+const Input = <T extends FieldValues>({
   label,
   id,
   type = 'text',
@@ -22,7 +24,9 @@ const Input: React.FC<InputProps> = ({
   register,
   errors,
   disabled = false,
-}) => {
+  error,
+  loading
+}: InputProps<T>) => {
   return (
     <div>
       <label
@@ -31,7 +35,7 @@ const Input: React.FC<InputProps> = ({
       >
         {label}
       </label>
-      <div className="mt-2">
+      <div className="mt-2 relative">
         <input
           type={type}
           id={id}
@@ -59,10 +63,20 @@ const Input: React.FC<InputProps> = ({
             duration-200
             sm:text-sm
             sm:leading-6`,
-            errors[id] && 'focus:ring-destructive ring-destructive/50',
+            (errors[id] || error) && 'focus:ring-destructive ring-destructive/50',
             disabled && 'opacity-50 cursor-default bg-muted'
           )}
         />
+        {loading && (
+          <div className="absolute right-3 top-1/2 -translate-y-1/2">
+            <Loader2 className="animate-spin" />
+          </div>
+        )}
+        {error && (
+          <p className="mt-1 text-sm text-destructive">
+            {error}
+          </p>
+        )}
       </div>
     </div>
   );

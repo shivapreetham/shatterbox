@@ -35,7 +35,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // Redirect unauthenticated users trying to access protected routes
-  if (!token && (url.pathname.startsWith('/dashboard') || url.pathname.startsWith('/chat'))) {
+  if (!token && (url.pathname.startsWith('/dashboard'))) {
     return NextResponse.redirect(new URL('/sign-in', request.url));
   }
 

@@ -1,3 +1,5 @@
+'use client'
+
 import React from 'react';
 import Modal from '@/components/chat/Modal';
 import Input from '@/components/chat/input/Input';
@@ -5,14 +7,19 @@ import Select from '@/components/chat/input/Select';
 import { User } from '@prisma/client';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
-import { FieldValues, SubmitHandler, useForm } from 'react-hook-form';
+import { useState, useEffect, useCallback } from 'react';
+import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { AlertCircle } from 'lucide-react';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { GroupChatFormData, groupChatSchema } from '@/schemas/groupChatSchema';
+import debounce from 'lodash/debounce';
+import {Option} from '@/components/chat/input/Select';
+import {  useSession } from 'next-auth/react';
 
 interface GroupChatModalProps {
   isOpen?: boolean;
@@ -22,7 +29,11 @@ interface GroupChatModalProps {
 
 const GroupChatModal: React.FC<GroupChatModalProps> = ({ isOpen, onClose, users }) => {
   const router = useRouter();
+
+  const session = useSession();
   const [isLoading, setIsLoading] = useState(false);
+  const [isCheckingName, setIsCheckingName] = useState(false);
+  const [nameError, setNameError] = useState<string | null>(null);
 
   const {
     register,
@@ -30,35 +41,77 @@ const GroupChatModal: React.FC<GroupChatModalProps> = ({ isOpen, onClose, users 
     formState: { errors },
     setValue,
     watch,
-  } = useForm<FieldValues>({
+  } = useForm<GroupChatFormData>({
+    resolver: zodResolver(groupChatSchema),
     defaultValues: {
       name: '',
       members: [],
-      isAnonymous: false
+      isAnonymous: false,
+      isGroup: true,
     },
   });
 
   const members = watch('members');
   const isAnonymous = watch('isAnonymous');
+  const groupName = watch('name');
 
-  const onSubmit: SubmitHandler<FieldValues> = (data) => {
+  const checkGroupName = useCallback(
+    debounce(async (name: string) => {
+      if (name.length < 3) return;
+      
+      setIsCheckingName(true);
+      try {
+        const response = await axios.get(`/api/zod-check/check-groupname-unique?name=${encodeURIComponent(name)}`);
+        if (!response.data.success) {
+          setNameError('This group name is already taken');
+        } else {
+          setNameError(null);
+        }
+      } catch (error:any) {
+        setNameError('Error checking group name');
+      } finally {
+        setIsCheckingName(false);
+      }
+    }, 500),
+    [] // No dependencies needed as it's using closure values
+  );
+
+  // Watch for group name changes
+  useEffect(() => {
+    if (groupName) {
+      checkGroupName(groupName);
+    }
+    return () => {
+      checkGroupName.cancel();
+    };
+  }, [groupName, checkGroupName]);
+
+  const onSubmit = async (data: GroupChatFormData) => {
+    if (nameError) return;
+    
     setIsLoading(true);
-    axios
-      .post('/api/chat/conversations', {
+    try {
+      const payload = {
         ...data,
-        isGroup: true,
-        isAnonymous: data.isAnonymous,
-        theme: 'system'
-      })
-      .then(() => {
-        router.refresh();
-        onClose();
-        toast.success('Group chat created!');
-        router.push('/conversations');
-      })
-      .catch(() => toast.error('Failed to create group chat'))
-      .finally(() => setIsLoading(false));
+        members: data.members.map(id => ({ value: id }))
+      };
+      
+      await axios.post('/api/chat/conversations', payload);
+      router.refresh();
+      onClose();
+      toast.success('Group chat created!');
+      router.push('/conversations');
+    } catch (error: any) {
+      toast.error('Failed to create group chat');
+    } finally {
+      setIsLoading(false);
+    }
   };
+
+  const userOptions: Option[] = users.map((user) => ({
+    label: user.username,
+    value: user.id,
+  }));
 
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
@@ -76,26 +129,27 @@ const GroupChatModal: React.FC<GroupChatModalProps> = ({ isOpen, onClose, users 
         
         <form onSubmit={handleSubmit(onSubmit)}>
           <CardContent className="space-y-6">
-            <Input
+            <Input<GroupChatFormData>
               label={isAnonymous ? "Group Alias" : "Group Name"}
               id="name"
               register={register}
               errors={errors}
               disabled={isLoading}
               required
+              error={nameError}
+              loading={isCheckingName}
             />
             
             <Select
               disabled={isLoading}
               label="Add Members"
-              options={users.map((user) => ({
-                label: user.username,
-                value: user.id,
-              }))}
-              onChange={(value) => setValue('members', value, { 
+              options={userOptions}
+              onChange={(value) => setValue('members', value.map(v => v.value), { 
                 shouldValidate: true 
               })}
-              value={members}
+              value={userOptions.filter(option => 
+                members.includes(option.value)
+              )}
             />
 
             <div className="flex items-center space-x-2">
