@@ -38,7 +38,7 @@ export default function SignUpForm() {
     const checkUsernameUnique = async () => {
       if (username) {
         setIsCheckingUsername(true);
-        setUsernameMessage(''); // Reset message
+        setUsernameMessage('');
         try {
           const response = await axios.get<ApiResponse>(
             `/api/check-username-unique?username=${username}`
@@ -61,6 +61,21 @@ export default function SignUpForm() {
     try {
       const response = await axios.post<ApiResponse>('/api/sign-up', data);
 
+      try {
+        await fetch('/api/chat/group-management', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+      } catch (error) {
+        console.error('Error adding to groups:', error);
+        // Don't block the signup process if group addition fails
+        toast({
+          title: 'Notice',
+          description: 'Account created but group assignment pending. This will be retried automatically.',
+        });
+      }
+  
       toast({
         title: 'Success',
         description: response.data.message,
@@ -148,7 +163,7 @@ export default function SignUpForm() {
                     placeholder="Enter your email"
                   />
                   <p className="text-sm text-muted-foreground">
-                    We'll send you a verification code
+                    We will send you a verification code
                   </p>
                   <FormMessage className="text-red-500" />
                 </FormItem>

@@ -11,7 +11,7 @@ export const signUpSchema = z.object({
   username: usernameValidation,
   email: z.string()
   .email()
-  .regex(/^[A-Za-z0-9]+@nitjsr\.ac\.in$/, {
+  .regex(/^(20\d{2})(ug|pg)([a-z]+)(\d{3})@nitjsr\.ac\.in$/, {
     message: "Please fill a valid email address (ending with @nitjsr.ac.in)",
   }),
   

@@ -8,7 +8,6 @@ import {
   Sparkles, 
   MessageCircle, 
   Lock, 
-  Shield, 
   Users, 
   Bot, 
   School,
