@@ -9,8 +9,6 @@ import { format } from 'date-fns';
 import Image from 'next/image';
 import ImageModal from './ImageModal';
 import { Info, Trash } from 'lucide-react';
-import axios from 'axios';
-import { useRouter } from 'next/navigation';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from '@/components/ui/button';
 
@@ -19,13 +17,16 @@ interface MessageBoxProps {
   data: FullMessageType;
   isAnonymous?: boolean;
   onDelete?: (messageId: string) => Promise<void>;
+  isPending?: boolean;
+  isFailed?: boolean;
 }
 
 const MessageBox: React.FC<MessageBoxProps> = ({ 
   isLast, 
   data,
   isAnonymous,
-  onDelete
+  onDelete,
+
 }) => {
   const session = useSession();
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);

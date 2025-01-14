@@ -1,15 +1,18 @@
 'use client'
 
-
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { z } from 'zod';
 import useConversation from '@/app/hooks/useConversation';
+import { useMessageStore } from '@/app/hooks/useMessageStore';
+import { useSession } from 'next-auth/react';
 import axios from 'axios';
 import { FieldValues, SubmitHandler, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { HiPhoto, HiPaperAirplane } from 'react-icons/hi2';
 import MessageInput from './MessageInput';
 import { createClient } from '@supabase/supabase-js';
+import { v4 as uuidv4 } from 'uuid';
+import { toast } from 'react-hot-toast';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -42,12 +45,16 @@ const messageSchema = z.object({
 
 const Form = () => {
   const { conversationId } = useConversation();
+  const session = useSession();
+  const { addPendingMessage, confirmMessage, failMessage } = useMessageStore();
+  
   const [isProcessingAI, setIsProcessingAI] = useState(false);
   const [isUploadingFile, setIsUploadingFile] = useState(false);
   const [isSendingMessage, setIsSendingMessage] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const isSubmitting = useRef(false);
+  const currentUploadController = useRef<AbortController | null>(null);
 
   const {
     register,
@@ -65,17 +72,48 @@ const Form = () => {
 
   const message = watch('message');
 
+  // Cleanup function for ongoing requests
+  useEffect(() => {
+    return () => {
+      if (currentUploadController.current) {
+        currentUploadController.current.abort();
+      }
+    };
+  }, []);
+
+  const createOptimisticMessage = (messageText: string, imageUrl?: string) => {
+    const tempId = uuidv4();
+    return {
+      id: tempId,
+      body: messageText,
+      image: imageUrl,
+      conversationId,
+      status: 'pending' as const,
+      createdAt: new Date().toISOString(),
+      sender: session.data?.user || {},
+      seen: []
+    };
+  };
+
   const processAICommand = async (prompt: string) => {
     setIsProcessingAI(true);
+    const controller = new AbortController();
+    currentUploadController.current = controller;
+
     try {
       const response = await axios.post('/api/chat/ai-autofill', {
         topic: prompt.substring(1)
+      }, {
+        signal: controller.signal
       });
       setValue('message', response.data.message);
-    } catch (error) {
+    } catch (error: any) {
+      if (error.name === 'AbortError') return;
+      toast.error('AI processing failed. Please try again.');
       console.error('AI processing failed:', error);
     } finally {
       setIsProcessingAI(false);
+      currentUploadController.current = null;
     }
   };
 
@@ -84,49 +122,69 @@ const Form = () => {
     if (!file) return;
 
     if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
-      console.error('Invalid file type');
+      toast.error('Invalid file type. Please use JPG, PNG or WebP.');
       return;
     }
 
     if (file.size > MAX_FILE_SIZE) {
-      console.error('File too large');
+      toast.error('File too large. Maximum size is 5MB.');
       return;
     }
 
     setIsUploadingFile(true);
+    const controller = new AbortController();
+    currentUploadController.current = controller;
+
     try {
       const fileName = `${conversationId}-${Date.now()}.jpg`;
+      const optimisticMessage = createOptimisticMessage(message || '', URL.createObjectURL(file));
+      addPendingMessage(conversationId, optimisticMessage);
 
-      const { error } = await supabase.storage
+      const { error: uploadError } = await supabase.storage
         .from('chat-images')
-        .upload(fileName, file);
+        .upload(fileName, file, {
+          abortSignal: controller.signal
+        });
 
-      if (error) throw error;
+      if (uploadError) throw uploadError;
 
       const { data: { publicUrl } } = supabase.storage
         .from('chat-images')
         .getPublicUrl(fileName);
 
-      // Automatically submit the message with image
-      await onSubmit({ message: message || '', imageUrl: publicUrl });
+      // Send message with uploaded image
+      const response = await axios.post('/api/chat/messages', {
+        message: message || '',
+        image: publicUrl,
+        conversationId
+      }, {
+        signal: controller.signal
+      });
+
+      confirmMessage(conversationId, optimisticMessage.id, response.data);
+      reset();
       
+    } catch (error: any) {
+      if (error.name === 'AbortError') return;
+      console.error('Upload failed:', error);
+      toast.error('Failed to upload image. Please try again.');
+    } finally {
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
       setImageUrl(null);
-
-    } catch (error) {
-      console.error('Upload failed:', error);
-    } finally {
       setIsUploadingFile(false);
+      currentUploadController.current = null;
     }
   };
 
   const onSubmit: SubmitHandler<FieldValues> = async (data) => {
-    // Prevent multiple submissions
     if (isSubmitting.current) return;
     isSubmitting.current = true;
     setIsSendingMessage(true);
+
+    const controller = new AbortController();
+    currentUploadController.current = controller;
 
     try {
       if (data.message.startsWith('@')) {
@@ -134,22 +192,36 @@ const Form = () => {
         return;
       }
 
-      await axios.post('/api/chat/messages', {
+      // Create and add optimistic message
+      const optimisticMessage = createOptimisticMessage(data.message, data.imageUrl || imageUrl);
+      addPendingMessage(conversationId, optimisticMessage);
+
+      // Actual server request
+      const response = await axios.post('/api/chat/messages', {
         message: data.message,
         image: data.imageUrl || imageUrl,
         conversationId
+      }, {
+        signal: controller.signal
       });
 
+      // Confirm message on success
+      confirmMessage(conversationId, optimisticMessage.id, response.data);
       reset();
       setImageUrl(null);
+
+    } catch (error: any) {
+      if (error.name === 'AbortError') return;
+      console.error('Error sending message:', error);
+      failMessage(conversationId, optimisticMessage.id);
+      toast.error('Failed to send message. Please try again.');
+    } finally {
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
-    } catch (error) {
-      console.error('Error sending message:', error);
-    } finally {
       setIsSendingMessage(false);
       isSubmitting.current = false;
+      currentUploadController.current = null;
     }
   };
 
