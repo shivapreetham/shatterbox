@@ -6,10 +6,13 @@ import { Transition, Dialog } from '@headlessui/react';
 import { Conversation, User } from '@prisma/client';
 import { format } from 'date-fns';
 import { useMemo, Fragment, useState } from 'react';
-import { IoClose, IoTrash } from 'react-icons/io5';
-import ConfirmModal from './ConfirmModal';
+import { IoClose, IoPersonAdd, IoExitOutline, IoTrash } from 'react-icons/io5';
 import AvatarGroup from '@/components/chat/AvatarGroup';
 import useActiveList from '@/app/hooks/useActiveList';
+import AddMembersModal from './AddMembersModal';
+import axios from 'axios';
+import { toast } from 'react-hot-toast';
+import { useRouter } from 'next/navigation';
 
 interface ProfileDrawerProps {
   isOpen: boolean;
@@ -24,11 +27,10 @@ const ProfileDrawer: React.FC<ProfileDrawerProps> = ({
   onClose,
   data,
 }) => {
+  const router = useRouter();
   const otherUser = useOtherUser(data);
-  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+  const [isAddMembersModalOpen, setIsAddMembersModalOpen] = useState(false);
   const { members } = useActiveList();
-
-  // const isActive = members.find(member => member.id === otherUser?._id)?.activeStatus;
 
   const joinedDate = useMemo(() => {
     return format(new Date(data.createdAt), 'PP');
@@ -52,6 +54,32 @@ const ProfileDrawer: React.FC<ProfileDrawerProps> = ({
     
     return `Last seen ${format(new Date(member.lastSeen), 'PPp')}`;
   }, [data, members, otherUser?._id]);
+
+  const handleExitGroup = async () => {
+    try {
+      await axios.delete(`/api/chat/conversations/${data.id}/members`);
+      onClose();
+      router.push('/conversations');
+      router.refresh();
+      toast.success('Left the group successfully');
+    } catch (error) {
+      console.error('Error leaving group:', error);
+      toast.error('Failed to leave the group');
+    }
+  };
+
+  const handleDeleteConversation = async () => {
+    try {
+      await axios.delete(`/api/chat/conversations/${data.id}`);
+      onClose();
+      router.push('/conversations');
+      router.refresh();
+      toast.success('Conversation deleted');
+    } catch (error) {
+      console.error('Error deleting conversation:', error);
+      toast.error('Failed to delete conversation');
+    }
+  };
 
   const MemberList = () => {
     return (
@@ -96,9 +124,11 @@ const ProfileDrawer: React.FC<ProfileDrawerProps> = ({
 
   return (
     <>
-      <ConfirmModal
-        isOpen={isConfirmModalOpen}
-        onClose={() => setIsConfirmModalOpen(false)}
+      <AddMembersModal
+        isOpen={isAddMembersModalOpen}
+        onClose={() => setIsAddMembersModalOpen(false)}
+        conversationId={data.id}
+        currentMembers={data.users}
       />
 
       <Transition.Root show={isOpen} as={Fragment}>
@@ -159,18 +189,48 @@ const ProfileDrawer: React.FC<ProfileDrawerProps> = ({
                           </div>
 
                           <div className="flex gap-10 my-8">
-                            <div
-                              onClick={() => setIsConfirmModalOpen(true)}
-                              title="Delete Chat"
-                              className="flex flex-col gap-3 items-center cursor-pointer hover:opacity-75 theme-transition"
-                            >
-                              <div className="w-10 h-10 bg-secondary rounded-full flex items-center justify-center text-destructive">
-                                <IoTrash size={20} />
+                            {data.isGroup && !data.isAnonymous ? (
+                              <>
+                                <div
+                                  onClick={() => setIsAddMembersModalOpen(true)}
+                                  title="Add Members"
+                                  className="flex flex-col gap-3 items-center cursor-pointer hover:opacity-75 theme-transition"
+                                >
+                                  <div className="w-10 h-10 bg-secondary rounded-full flex items-center justify-center text-primary">
+                                    <IoPersonAdd size={20} />
+                                  </div>
+                                  <div className="text-sm font-light text-muted-foreground">
+                                    Add Members
+                                  </div>
+                                </div>
+
+                                <div
+                                  onClick={handleExitGroup}
+                                  title="Exit Group"
+                                  className="flex flex-col gap-3 items-center cursor-pointer hover:opacity-75 theme-transition"
+                                >
+                                  <div className="w-10 h-10 bg-secondary rounded-full flex items-center justify-center text-destructive">
+                                    <IoExitOutline size={20} />
+                                  </div>
+                                  <div className="text-sm font-light text-muted-foreground">
+                                    Exit Group
+                                  </div>
+                                </div>
+                              </>
+                            ) : !data.isGroup && (
+                              <div
+                                onClick={handleDeleteConversation}
+                                title="Delete Conversation"
+                                className="flex flex-col gap-3 items-center cursor-pointer hover:opacity-75 theme-transition"
+                              >
+                                <div className="w-10 h-10 bg-secondary rounded-full flex items-center justify-center text-destructive">
+                                  <IoTrash size={20} />
+                                </div>
+                                <div className="text-sm font-light text-muted-foreground">
+                                  Delete
+                                </div>
                               </div>
-                              <div className="text-sm font-light text-muted-foreground">
-                                Delete
-                              </div>
-                            </div>
+                            )}
                           </div>
 
                           <div className="w-full pb-5 pt-5 sm:px-0 sm:pt-0">
