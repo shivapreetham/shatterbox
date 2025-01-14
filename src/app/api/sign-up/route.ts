@@ -5,7 +5,7 @@ import { sendVerificationEmail } from '@/helpers/sendVerificationEmails';
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    
+    // console.log(body)
     if (!body) {
       return Response.json(
         { success: false, message: 'No request body provided' },
@@ -22,7 +22,6 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
-
     // Check if user exists with verified username
     const existingVerifiedUserByUsername = await prisma.user.findFirst({
       where: {
@@ -41,7 +40,7 @@ export async function POST(request: Request) {
     const existingUserByEmail = await prisma.user.findFirst({
       where: { email },
     });
-
+    // console.log(existingUserByEmail)
     const verifyCode = Math.floor(100000 + Math.random() * 900000).toString();
 
     if (existingUserByEmail) {
@@ -58,17 +57,23 @@ export async function POST(request: Request) {
           where: { email },
           data: {
             username,
+            email,
             hashedPassword,
             verifyCode,
-            verifyCodeExpiry: new Date(Date.now() + 3600000), // 1 hour expiry
+            verifyCodeExpiry: new Date(Date.now() + 3600000),
+            isVerified: false,
+            isAcceptingAnonymousMessages: true
           },
         });
       }
     } else {
+
       // Create new user if email doesn't exist
       const hashedPassword = await bcrypt.hash(password, 10);
       const expiryDate = new Date();
       expiryDate.setHours(expiryDate.getHours() + 1); // 1 hour expiry
+
+    console.log("came until here")
 
       await prisma.user.create({
         data: {
@@ -79,10 +84,10 @@ export async function POST(request: Request) {
           verifyCodeExpiry: expiryDate,
           isVerified: false,
           isAcceptingAnonymousMessages: true
-          // Remove empty anonymousMessages creation
         },
       });
     }
+    console.log("came until here")
 
     // Send verification email
     const emailResponse = await sendVerificationEmail(

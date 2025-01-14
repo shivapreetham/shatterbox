@@ -174,7 +174,11 @@ export default function Home() {
           ))}
         </div>
       </main>
-
+      <div className="w-full max-w-4xl mx-auto px-4 mb-8">
+       <p className="text-sm text-red-500/90 text-center font-medium border border-red-500/20 rounded-lg p-3 bg-red-500/5">
+       ⚠️ Disclaimer: All anonymous messages are monitored. Any form of harassment, hate speech, or malicious content will result in immediate account termination and may lead to disciplinary action. Your anonymity does not protect you from consequences.
+    </p>
+      </div>
       <footer className="text-center p-8 bg-background/50 backdrop-blur-sm text-muted-foreground border-t border-primary/10">
         <p className="text-sm">
           © 2025 ShatterBox. All rights reserved.

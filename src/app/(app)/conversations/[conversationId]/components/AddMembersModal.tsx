@@ -119,8 +119,8 @@ const AddMembersModal = ({
                 value={selectedOptions}
                 onChange={setSelectedOptions}
                 options={userOptions}
-                isDisabled={isLoading}
-                isMulti
+                // isDisabled={isLoading}
+                // isMulti
               />
             )}
 

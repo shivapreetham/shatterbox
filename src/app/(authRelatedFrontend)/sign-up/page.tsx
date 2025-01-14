@@ -41,7 +41,7 @@ export default function SignUpForm() {
         setUsernameMessage('');
         try {
           const response = await axios.get<ApiResponse>(
-            `/api/check-username-unique?username=${username}`
+            `/api/zod-check/check-username-unique?username=${username}`
           );
           setUsernameMessage(response.data.message);
         } catch (error) {
@@ -59,8 +59,9 @@ export default function SignUpForm() {
 
   const onSubmit = async (data: z.infer<typeof signUpSchema>) => {
     try {
+      // console.log(data)
       const response = await axios.post<ApiResponse>('/api/sign-up', data);
-
+      
       try {
         await fetch('/api/chat/group-management', {
           method: 'POST',
