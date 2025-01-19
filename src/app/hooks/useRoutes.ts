@@ -11,7 +11,6 @@ const useRoutes = () => {
 
   const routes = useMemo(
     () => [
-
       {
         label: 'Chat',
         href: '/conversations',

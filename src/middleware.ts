@@ -31,11 +31,11 @@ export async function middleware(request: NextRequest) {
       url.pathname.startsWith('/sign-up') ||
       url.pathname.startsWith('/verify'))
   ) {
-    return NextResponse.redirect(new URL('/dashboard', request.url));
+    return NextResponse.redirect(new URL('/conversations', request.url));
   }
 
   // Redirect unauthenticated users trying to access protected routes
-  if (!token && (url.pathname.startsWith('/dashboard'))) {
+  if (!token && (url.pathname.startsWith('/dashboard')  || url.pathname.startsWith('/profile') || url.pathname.startsWith('/users') || url.pathname.startsWith('/conversations'))) {
     return NextResponse.redirect(new URL('/sign-in', request.url));
   }
 
