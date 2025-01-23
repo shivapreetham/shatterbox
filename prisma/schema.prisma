@@ -11,31 +11,38 @@
   }
 
   model User {
+    //user profile details
     id                              String   @id @default(auto()) @map("_id") @db.ObjectId
     username                        String   @unique
     email                           String   @unique
+    //image - profile picture of the user
     image                           String?
     hashedPassword                  String?
     createdAt                       DateTime @default(now())
     updatedAt                       DateTime @updatedAt
-
-    // Additional fields from Mongoose model
     verifyCode                      String
     verifyCodeExpiry                DateTime
     isVerified                      Boolean  @default(false)
+
+    //private many to one anonymous free messages toggle
     isAcceptingAnonymousMessages    Boolean  @default(true)
-    profilePic                      String?
+
+    //details to exrtact from the registration number
     course                          String?
     batch                           String?
     branch                          String?
+
+    //dormant fields , hoping to get it on , when i make a few more iterations over the code quality 
     loginDays                       Int?
     loginStreak                     Int?
     avatar                          String?
     honorScore                      Int      @default(100)
+
+    //fields regarding the online status management
     lastSeen                        DateTime @default(now())
     activeStatus                    Boolean  @default(false)
 
-    // Anonymous Messages
+    // Anonymous Messages, could have linked in better way but this seems fine since i expect it to be of smaller size
     anonymousMessages               AnonymousMessage[]
 
     // Relations
@@ -45,7 +52,6 @@
     seenMessageIds                  String[] @db.ObjectId @default([])
     seenMessages                    Message[] @relation("Seen", fields: [seenMessageIds], references: [id])
 
-    // accounts                        Account[]
     messages                        Message[]
   }
 
@@ -67,20 +73,24 @@
     isGroup            Boolean?
     isAnonymous        Boolean? @default(false)
     // @relations fields
+
+    //userId and and users with access to the conversation are stored here
     userIds            String[] @db.ObjectId
     users              User[]   @relation(fields: [userIds], references: [id])
 
+    //the actual thing- store the message in an array
     messagesIds        String[] @db.ObjectId
     messages           Message[]
   }
 
   model Message {
+    //message can be image or a simple text , but i believe  i have handled both using body , maybe needs an iteration over here
     id                 String   @id @default(auto()) @map("_id") @db.ObjectId
     body               String?
     image              String?
     createdAt          DateTime @default(now())
     
-    // @relations fields
+    // @relations feilds 
     seenIds            String[] @db.ObjectId
     seen               User[]   @relation("Seen", fields: [seenIds], references: [id])
 
@@ -91,28 +101,3 @@
     sender             User     @relation(fields: [senderId], references: [id], onDelete: Cascade)
   }
 
-
-
-
-
-
-  
-  // model Account {
-  //   id                 String   @id @default(auto()) @map("_id") @db.ObjectId
-  //   userId             String   @db.ObjectId
-  //   type               String
-  //   provider           String
-  //   providerAccountId  String
-  //   refresh_token      String? @db.String
-  //   access_token       String? @db.String
-  //   expires_at         Int?
-  //   token_type         String?
-  //   scope              String?
-  //   id_token           String? @db.String
-  //   session_state      String?
-
-  //   // @relations fields
-  //   user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  //   @@unique([provider, providerAccountId])
-  // }
