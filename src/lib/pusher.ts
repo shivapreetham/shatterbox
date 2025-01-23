@@ -2,6 +2,8 @@ import PusherServer from 'pusher';
 import PusherClient from 'pusher-js';
 
 // Create a singleton instance for the server
+// useTLS is used in order to enable encryption while interacting with the Pusher API
+//TLS --> Transport Layer Security
 const pusherServerClient = new PusherServer({
   appId: process.env.NEXT_PUBLIC_PUSHER_APP_ID!,
   key: process.env.NEXT_PUBLIC_PUSHER_KEY!,
@@ -16,12 +18,13 @@ const pusherClientInstance = new PusherClient(
   {
     cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER!,
     authEndpoint: '/api/pusher/auth',
-    authTransport: 'ajax',
+    authTransport: 'ajax',// ajax means it uses XMLHttpRequest (XHR).
     auth: {
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
     },
+    //ws and wss represent WebSocket connections (secure and non-secure).
     enabledTransports: ['ws', 'wss'],
   }
 );
