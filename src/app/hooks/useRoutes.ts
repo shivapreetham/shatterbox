@@ -4,7 +4,6 @@ import { HiChat } from 'react-icons/hi';
 import { signOut } from 'next-auth/react';
 import useConversation from './useConversation';
 import { HiArrowLeftOnRectangle, HiUsers, HiHome } from 'react-icons/hi2';
-import { ModeToggle } from '@/components/home&anonymous/ModeToggle';
 const useRoutes = () => {
   const pathname = usePathname();
   const { conversationId } = useConversation();

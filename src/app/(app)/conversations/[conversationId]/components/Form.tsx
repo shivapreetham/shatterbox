@@ -1,8 +1,6 @@
 'use client'
 
-
 import React, { useState, useRef } from 'react';
-import { z } from 'zod';
 import useConversation from '@/app/hooks/useConversation';
 import axios from 'axios';
 import { FieldValues, SubmitHandler, useForm } from 'react-hook-form';
@@ -10,6 +8,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { HiPhoto, HiPaperAirplane } from 'react-icons/hi2';
 import MessageInput from './MessageInput';
 import { createClient } from '@supabase/supabase-js';
+import { messageSchema } from '@/schemas/messageSchema';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -19,26 +18,7 @@ const supabase = createClient(
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
-const messageSchema = z.object({
-  message: z.string()
-    .min(1, "Message cannot be empty")
-    .refine((val) => {
-      if (val.startsWith('@')) {
-        return val.length <= 80;
-      }
-      return val.length <= 1000;
-    }, {
-      message: "Message exceeds maximum length"
-    })
-    .refine((val) => {
-      if (val.startsWith('@')) {
-        return val.split(' ').length <= 20;
-      }
-      return true;
-    }, {
-      message: "AI prompt cannot exceed 20 words"
-    })
-});
+
 
 const Form = () => {
   const { conversationId } = useConversation();
