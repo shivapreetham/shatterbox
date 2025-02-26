@@ -49,3 +49,30 @@ thats cool on its own ,
 we will see, 
 
 i have already put up a lot of time .
+---------------------------------
+
+okay for setting up the i checked out flyby.io and free option i have is jetski video chat but i cannot customise the stuffs to my need whihc hinders my thought of putting it into a anonymous video chat features and things of thosekinds , 
+i dont know how well i am going to do it , 
+
+it uses selective forwarding unit , 
+
+it requires huge knowledde of who are actually visible to you and stuffs of that kind , it can be kinky to learn all the things but slowly and steadily i move to my goal, Janus WebRTC Server - Lightweight, powerful, good for low-latency applications.
+MediaSoup - Great for self-hosted SFU with Node.js support.
+Jitsi Meet - Fully featured WebRTC-based video conferencing solution.
+Pion - A Go-based WebRTC SFU with great flexibility.
+
+1️⃣ Why Docker for MediaSoup?
+MediaSoup has native dependencies (C++ bindings for Node.js).
+Installing it directly can cause version mismatches (e.g., different OS, missing system packages).
+Docker ensures consistent environments across dev and production.
+
+Why "Cloud" Hosting?
+If you want your app to be publicly accessible, you need hosting.
+SFUs like MediaSoup need a stable server with good bandwidth.
+Free services like Render / Railway can work, but they may have limits on CPU, RAM, and bandwidth
+
+cloud hosting will defiintely have problems , i would love hosting which supports the browser too , but for now free solutions doesnt give you free UDP , so will figure it out soon,
+
+namaskara devru , happy shivratri
+
+--------------------------------------------
