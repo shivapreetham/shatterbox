@@ -76,3 +76,8 @@ cloud hosting will defiintely have problems , i would love hosting which support
 namaskara devru , happy shivratri
 
 --------------------------------------------
+its been a lot of time for sure , but i dont know why , i didn't like the thing that everyone was doing CV projects, 
+its great but how do i differentiate, 
+simple i just have to break my own limits to do that, 
+
+no wonder i wish to make voice matching done by ai , so that we fiigure it out whether its the actual person or not , i dont know whether its possible , gotta chek this thing out 
