@@ -81,3 +81,23 @@ its great but how do i differentiate,
 simple i just have to break my own limits to do that, 
 
 no wonder i wish to make voice matching done by ai , so that we fiigure it out whether its the actual person or not , i dont know whether its possible , gotta chek this thing out 
+
+
+----------------------------------------------------
+things surely have gotten stuck , 
+but i can say this for sure , rather than coding , or understadning and solving the problem , 
+
+whats most difficult is to go find the resources for uilding you r idea , ehat all could be useful and all those things , 
+
+damn everything man , i dont know how tf am i supposed to do things all by my self, 
+
+any way i have found decent things for referance-
+https://youtu.be/2hrNrNrSDB0?si=MhV9_aCqRD-RJLpE
+https://github.com/adrianhajdin/zoom-clone
+https://youtu.be/lh9XVGv6BHs?si=NfSyDZO6Jep_Yg7S
+
+can I scrape without a server ???? damnnnn broooo
+
+thats it for today , any more time i spend , my future self will be mad at me .. 
+
+-------------------
