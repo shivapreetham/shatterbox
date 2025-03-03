@@ -100,4 +100,25 @@ can I scrape without a server ???? damnnnn broooo
 
 thats it for today , any more time i spend , my future self will be mad at me .. 
 
--------------------
+----------------------------------------------------
+
+ok i don't think that i have much of time , but here are the update , everyone is working on the stuff , 
+i just gotta be better, 
+
+still i am unaware whether i will get udp connection , 
+but i am atleast expecting for a browser scraping option , 
+
+so thats it , 
+no big updates ,
+
+1. I have shatter box chat improvement
+2. video chat tools explore
+3. server for server webrtc
+4. voice and video filter explore
+5. react native app dev
+
+6. attendance system and shadow me trial again
+
+7. ml project little work
+
+8. pdf scanner to quiz making
